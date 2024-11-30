@@ -951,9 +951,14 @@
         isLongPress = false;
       });
 
+      let count = 0;
       keyrows.forEach(function (rowKeys) {
         var row = document.createElement("div");
         row.className = "row";
+        if (++count > keyrows.length - 1) {
+          row.style.maxHeight = "50px";
+        }
+
         board.appendChild(row);
         rowKeys.split("|").forEach(function (keyString) {
           if (keyString == "BAR") {
