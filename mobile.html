@@ -19,7 +19,6 @@
         height: 100%;
         overflow: hidden;
       }
-
       /* Add overlay styles */
       #paste-overlay {
         display: none;
@@ -159,25 +158,21 @@
         flex-direction: column;
         flex-grow: 2;
       }
+
       .row {
-        /* layout */
         display: flex;
         flex-direction: row;
         flex-grow: 1;
-
-        /* appearance */
         margin-top: 2px;
         margin-bottom: 2px;
       }
+
       .key {
-        /* layout */
         flex-grow: 1;
         display: flex;
         flex-direction: column;
         justify-content: center;
         text-align: center;
-
-        /* appearance */
         background-color: lightgray;
         border-radius: 5px;
         margin-left: 2px;
@@ -185,26 +180,29 @@
         font-weight: bold;
         font-family: monospace;
         font-size: 20px;
-
-        /* disable text selection */
         user-select: none;
         -moz-user-select: none;
         -khtml-user-select: none;
         -webkit-user-select: none;
         -o-user-select: none;
       }
+
       .key:active {
         background-color: darkgray;
       }
+
       .alpha-key {
         background-color: white;
       }
+
       .num-key {
         background-color: white;
       }
+
       .special-key {
         background-color: orange;
       }
+
       .space-key {
         background-color: white;
         flex-grow: 2;
@@ -224,7 +222,7 @@
     <div id="console">
       <div id="console-content"></div>
     </div>
-    <div id="keyboard" />
+    <div id="keyboard"></div>
   </body>
   <script src="oK.js"></script>
   <script src="convert.js"></script>
@@ -618,7 +616,8 @@
     ];
 
     var shiftHeld = false;
-    var keyboardMode = null;
+    var keyboardMode = "calc"; // Default to calculator keyboard
+    var spacebarHoldTimer = null;
 
     function shiftedLabel(key, label, shifted) {
       if (label == "BACK" && shifted) {
@@ -681,12 +680,7 @@
           return function (event) {
             event.preventDefault();
             event.stopPropagation();
-
-            if (keyboardMode == "full") {
-              buildCalcKeyboard();
-            } else {
-              buildFullKeyboard();
-            }
+            toggleKeyboard();
           };
         case "SHIFT":
           return function (event) {
@@ -743,6 +737,14 @@
       }
     }
 
+    function toggleKeyboard() {
+      if (keyboardMode === "calc") {
+        buildFullKeyboard();
+      } else {
+        buildCalcKeyboard();
+      }
+    }
+
     function buildKey(key) {
       var r = document.createElement("span");
       r.className = "key";
@@ -751,9 +753,63 @@
       if (key == " ") {
         r.className += " space-key";
         r.innerHTML = "&nbsp;&nbsp;";
-        var handler = typeNormal.bind(this, r, " ");
-        r.addEventListener("mouseup", handler);
-        r.addEventListener("touchend", handler);
+
+        // Handle spacebar hold
+        let spacebarHoldTimer = null;
+        let isHolding = false;
+
+        r.addEventListener("mousedown", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          spacebarHoldTimer = setTimeout(function () {
+            isHolding = true;
+            toggleKeyboard();
+          }, 500);
+        });
+
+        r.addEventListener("mouseup", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          clearTimeout(spacebarHoldTimer);
+          if (!isHolding) {
+            typeNormal(r, " ", event);
+          }
+          isHolding = false;
+        });
+
+        r.addEventListener("mouseleave", function (event) {
+          clearTimeout(spacebarHoldTimer);
+          isHolding = false;
+        });
+
+        // Touch events
+        r.addEventListener("touchstart", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          spacebarHoldTimer = setTimeout(function () {
+            isHolding = true;
+            toggleKeyboard();
+          }, 500);
+        });
+
+        r.addEventListener("touchend", function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          clearTimeout(spacebarHoldTimer);
+          if (!isHolding) {
+            typeNormal(r, " ", event);
+          }
+          isHolding = false;
+        });
+
+        r.addEventListener("touchcancel", function (event) {
+          clearTimeout(spacebarHoldTimer);
+          isHolding = false;
+        });
       } else if (inl(key, alpha)) {
         r.className += " alpha-key";
         r.innerHTML = key;
@@ -805,6 +861,7 @@
       }
       updateEdit(editText, i);
     }
+
     function buildKeyboard(keyrows) {
       var board = document.getElementById("keyboard");
       var d = document.createElement("div");
@@ -975,11 +1032,12 @@
     };
 
     /**
-     * Initialization (including temporary testing data):
+     * Initialization
      **/
 
-    window.onresize();
-    printText("output", "oK Mobile v" + version);
+    // Initialize with calculator keyboard
+    buildCalcKeyboard();
+    // printText("output", "oK Mobile v" + version);
 
     var bootEnv = localStorage.getItem("env");
     if (bootEnv && bootEnv != "()") {
