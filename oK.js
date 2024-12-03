@@ -2047,30 +2047,41 @@ function baseEnv() {
     y = l(y)
       .v.map((t) => String.fromCharCode(t.v))
       .join("");
+
     const rex = new RegExp(x, "g");
     const matches = [];
-    for (const match of y.matchAll(rex)) {
-      matches.push(
-        k(3, [
-          k(0, match.index),
-          k(
-            3,
-            match[0].split("").map((m) => k(1, m.charCodeAt(0)))
-          ),
-          k(
-            3,
-            match.slice(1).map((m) =>
+    function expand(match) {
+      const res = [];
+      if (match.length > 1)
+        for (const m of match.slice(1)) {
+          // if (!m) res.push(NIL);
+          if (!m) continue;
+          else
+            res.push(
               isNumber(m)
                 ? k(0, parseFloat(m))
                 : k(
                     3,
                     m.split("").map((m1) => k(1, m1.charCodeAt(0)))
                   )
-            )
-          ),
-        ])
-      );
+            );
+        }
+      return res && res.length > 0 ? k(3, res) : [];
     }
+    for (const match of y.matchAll(rex)) {
+      if (match)
+        matches.push(
+          k(3, [
+            k(0, match.index),
+            k(
+              3,
+              match[0].split("").map((m) => k(1, m.charCodeAt(0)))
+            ),
+            expand(match),
+          ])
+        );
+    }
+    // console.log(JSON.stringify(matches, null, 2));
     return k(3, matches);
   }
 
