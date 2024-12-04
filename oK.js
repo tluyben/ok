@@ -1275,8 +1275,15 @@ function call(x, y, env) {
   environment.put(ks("o"), false, x);
   return run(x.v, environment);
 }
-
-function run(node, env) {
+var instrCount = 0;
+function run(node, env, start) {
+  if (start) {
+    instrCount = 0;
+  }
+  instrCount++;
+  if (instrCount > 1000000) {
+    throw new Error("instruction limit exceeded.");
+  }
   if (node instanceof Array) {
     return node.reduce(function (_, x) {
       return run(x, env);
