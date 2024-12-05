@@ -2,6 +2,10 @@
 <html data-theme="light">
   <head>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ext-language_tools.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ext-modelist.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/theme-tomorrow.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/theme-tomorrow_night.js"></script>
     <script src="k-ok.js"></script>
     <script src="oK.js"></script>
     <link rel="stylesheet" href="editor.css" />
@@ -64,6 +68,7 @@
       let editingNoteId = null;
       let environments = new Map(); // Store oK environments for each file
       let lineResults = new Map(); // Store results per line for each file
+      let currentMarkers = []; // Track current markers for cleanup
 
       // Load files from localStorage
       function loadFiles() {
@@ -225,8 +230,14 @@
       function updateLineResults() {
         if (!currentFileId || !editor) return;
 
-        // Remove existing result widgets
-        editor.session.removeMarkers();
+        // Remove existing markers
+        currentMarkers.forEach(marker => {
+          editor.session.removeGutterDecoration(marker.row, marker.className);
+          if (marker.widget) {
+            editor.session.widgetManager.removeLineWidget(marker.widget);
+          }
+        });
+        currentMarkers = [];
 
         const results = lineResults.get(currentFileId);
         if (!results) return;
@@ -242,16 +253,30 @@
           }`;
           resultDiv.textContent = result.value;
 
-          // Add widget to current line
-          editor.session.addGutterDecoration(
-            cursorLine,
-            result.type === "error" ? "ace-line-error" : ""
-          );
-          editor.session.widgetManager?.addLineWidget({
+          // Add gutter decoration
+          const className = result.type === "error" ? "ace-line-error" : "";
+          editor.session.addGutterDecoration(cursorLine, className);
+          
+          // Initialize LineWidgets if not already done
+          if (!editor.session.widgetManager) {
+            const LineWidgets = ace.require("ace/line_widgets").LineWidgets;
+            editor.session.widgetManager = new LineWidgets(editor.session);
+            editor.session.widgetManager.attach(editor);
+          }
+
+          // Add the widget
+          const widget = editor.session.widgetManager.addLineWidget({
             row: cursorLine,
             el: resultDiv,
             type: "lineWidget",
             fixedWidth: true,
+          });
+
+          // Track the marker for cleanup
+          currentMarkers.push({
+            row: cursorLine,
+            className: className,
+            widget: widget
           });
         }
       }
@@ -272,13 +297,10 @@
           behavioursEnabled: false,
         });
 
-        // Create widget manager if it doesn't exist
-        if (!editor.session.widgetManager) {
-          editor.session.widgetManager = new ace.require(
-            "ace/line_widgets"
-          ).LineWidgets(editor.session);
-          editor.session.widgetManager.attach(editor);
-        }
+        // Initialize LineWidgets
+        const LineWidgets = ace.require("ace/line_widgets").LineWidgets;
+        editor.session.widgetManager = new LineWidgets(editor.session);
+        editor.session.widgetManager.attach(editor);
 
         // Save content on change with debounce
         let saveTimeout;
@@ -303,7 +325,7 @@
 
         // Update results when cursor moves
         editor.selection.on("changeCursor", function () {
-          // updateLineResults();
+          updateLineResults();
         });
       }
 
