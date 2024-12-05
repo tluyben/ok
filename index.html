@@ -14,11 +14,59 @@
     <script src="oK.js"></script>
     <script src="convert.js"></script>
     <link rel="stylesheet" href="editor.css" />
+    <style>
+      .manual-popover {
+        display: none;
+        position: fixed;
+        background: #fffff3;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0 20px 20px 20px;
+        max-width: 90vw;
+        width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        white-space: pre-wrap;
+        font-family: monospace;
+        line-height: 1.4;
+      }
+
+      .manual-popover.active {
+        display: block;
+      }
+
+      .manual-close {
+        position: sticky;
+        top: 10px;
+        float: right;
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: var(--text-color);
+        margin: 10px -10px 0 0;
+      }
+
+      .ok-title {
+        cursor: pointer;
+        user-select: none;
+      }
+
+      @media (max-width: 768px) {
+        .manual-popover {
+          width: 85vw;
+          max-height: 70vh;
+          margin: 20px;
+        }
+      }
+    </style>
   </head>
   <body>
     <div class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <h2>Files</h2>
+        <h2 class="ok-title" onclick="toggleManual()">oK</h2>
         <div class="header-actions">
           <button class="new-file-btn" onclick="createNewFile()">📄 New</button>
           <button class="theme-switch" id="themeSwitch" onclick="toggleTheme()">
@@ -41,6 +89,41 @@
       </div>
       <div class="main-content" id="mainContent">
         <div class="no-file-message">Select a file to view its contents</div>
+      </div>
+    </div>
+
+    <div class="manual-popover" id="manualPopover">
+      <button class="manual-close" onclick="toggleManual()">×</button>
+      <div id="manualContent">
+        <pre>oK has atom, list (2;`c), dict `a`b!(2;`c) and func {[x;y]x+y}
+20 primitives/verbs, 6 operators/adverbs and 3 system functions
+
+Verb       (unary)    Adverb             Noun         (null)
+: gets                '  each            name  `a`b    `
++ plus      flip      /  over|join       char  "ab"    " "
+- minus     negate    \  scan|split      num   2 .3    0N(nan) 0w(inf)
+* times     first     ': eachprior       hex   0x2a2b
+% divide    sqrt      /: eachright       bool  01000b
+! mod|map   enum|key  \: eachleft
+& min|and   where
+| max|or    reverse   System             list (2;3.4;`ab)
+< less      asc       0: file r/w        dict `a`b!(2;`c)
+> more      desc      1: json r/w        view f::32+1.8*c
+= equal     group     5: printable form  func {[c]32+1.8*c}
+~ match     not
+, concat    enlist
+^ fill|out  null                         \t x   time
+# take|rsh  count                        \\     exit
+_ drop|cut  floor
+$ cast|sum  string    $[c;t;f]     COND
+? find|rnd  distinct  ?[x;I;[f;]y] insert
+@ at        type      @[x;i;[f;]y] amend
+. dot       eval|val  .[x;i;[f;]y] dmend
+
+A manual of the oK language is available with more details:
+    https://github.com/JohnEarnest/ok/blob/gh-pages/docs/Manual.md
+A more general introduction to array programming is also provided:
+    https://github.com/JohnEarnest/ok/blob/gh-pages/docs/Programming.md</pre>
       </div>
     </div>
 
@@ -80,6 +163,18 @@
       let lineResults = new Map();
       let currentMarkers = [];
       let lastContent = "";
+
+      function toggleManual() {
+        const popover = document.getElementById("manualPopover");
+        popover.classList.toggle("active");
+        if (popover.classList.contains("active")) {
+          const rect = document
+            .querySelector(".ok-title")
+            .getBoundingClientRect();
+          popover.style.top = (rect.bottom + window.scrollY + 10) + "px";
+          popover.style.left = (rect.left + window.scrollX) + "px";
+        }
+      }
 
       function loadFiles() {
         const savedFiles = localStorage.getItem("editor_files");
@@ -443,7 +538,7 @@
         if (!file) return;
 
         document.getElementById("mobileTitle").textContent = file.name;
-        
+
         const mobileNotesList = document.getElementById("mobileNotes");
         if (mobileNotesList) {
           mobileNotesList.innerHTML = file.notes
@@ -601,6 +696,18 @@
       loadTheme();
       loadFiles();
       renderFiles();
+
+      // Close manual popover when clicking outside
+      document.addEventListener("click", function (event) {
+        const popover = document.getElementById("manualPopover");
+        const okTitle = document.querySelector(".ok-title");
+        if (
+          !popover.contains(event.target) &&
+          !okTitle.contains(event.target)
+        ) {
+          popover.classList.remove("active");
+        }
+      });
     </script>
   </body>
 </html>
