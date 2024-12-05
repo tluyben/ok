@@ -236,7 +236,7 @@
           const existingNote = file.notes.find((n) => n.title === noteName);
           // Convert array to string using semicolons
           const content = Array.isArray(tojs(y))
-            ? tojs(y).join(";")
+            ? tojs(y).join("\n")
             : format(y);
 
           if (existingNote) {
