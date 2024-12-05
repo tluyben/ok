@@ -15,10 +15,28 @@
     <script src="convert.js"></script>
     <link rel="stylesheet" href="editor.css" />
     <style>
+      :root {
+        --popover-bg-light: #fffff3;
+        --popover-bg-dark: #1e1e1e;
+        --popover-text-light: #000000;
+        --popover-text-dark: #ffffff;
+      }
+
+      [data-theme="light"] {
+        --popover-bg: var(--popover-bg-light);
+        --popover-text: var(--popover-text-light);
+      }
+
+      [data-theme="dark"] {
+        --popover-bg: var(--popover-bg-dark);
+        --popover-text: var(--popover-text-dark);
+      }
+
       .manual-popover {
         display: none;
         position: fixed;
-        background: #fffff3;
+        background: var(--popover-bg);
+        color: var(--popover-text);
         border: 1px solid var(--border-color);
         border-radius: 8px;
         padding: 0;
@@ -47,17 +65,22 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #fffff3;
+        background: var(--popover-bg);
         border: none;
         font-size: 20px;
         cursor: pointer;
-        color: var(--text-color);
+        color: var(--popover-text);
         z-index: 2;
         margin: 0 0 -40px 0;
       }
 
       .manual-content {
         padding: 10px 40px 20px 20px;
+      }
+
+      .manual-content pre {
+        color: var(--popover-text);
+        margin: 0;
       }
 
       .ok-title {
@@ -75,6 +98,7 @@
     </style>
   </head>
   <body>
+    <!-- Rest of the HTML remains unchanged -->
     <div class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <h2 class="ok-title" onclick="toggleManual()">oK</h2>
@@ -106,7 +130,8 @@
     <div class="manual-popover" id="manualPopover">
       <button class="manual-close" onclick="toggleManual()">×</button>
       <div class="manual-content">
-        <pre>oK has atom, list (2;`c), dict `a`b!(2;`c) and func {[x;y]x+y}
+        <pre>
+oK has atom, list (2;`c), dict `a`b!(2;`c) and func {[x;y]x+y}
 20 primitives/verbs, 6 operators/adverbs and 3 system functions
 
 Verb       (unary)    Adverb             Noun         (null)
@@ -134,7 +159,8 @@ $ cast|sum  string    $[c;t;f]     COND
 A manual of the oK language is available with more details:
     https://github.com/JohnEarnest/ok/blob/gh-pages/docs/Manual.md
 A more general introduction to array programming is also provided:
-    https://github.com/JohnEarnest/ok/blob/gh-pages/docs/Programming.md</pre>
+    https://github.com/JohnEarnest/ok/blob/gh-pages/docs/Programming.md</pre
+        >
       </div>
     </div>
 
@@ -182,8 +208,8 @@ A more general introduction to array programming is also provided:
           const rect = document
             .querySelector(".ok-title")
             .getBoundingClientRect();
-          popover.style.top = (rect.bottom + window.scrollY + 10) + "px";
-          popover.style.left = (rect.left + window.scrollX) + "px";
+          popover.style.top = rect.bottom + window.scrollY + 10 + "px";
+          popover.style.left = rect.left + window.scrollX + "px";
         }
       }
 
