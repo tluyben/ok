@@ -360,6 +360,45 @@ body {
   .top-bar {
     display: flex;
     align-items: center;
+    gap: 1rem;
+    padding: 0.5rem;
+  }
+
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .mobile-header::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-header h2 {
+    font-size: 1rem;
+    margin: 0;
+  }
+
+  .mobile-notes {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 0.25rem;
+  }
+
+  .mobile-notes::-webkit-scrollbar {
+    display: none;
+  }
+
+  .note-item {
+    flex-shrink: 0;
   }
 
   .overlay.sidebar-overlay {
@@ -369,5 +408,23 @@ body {
   .overlay.sidebar-overlay.active {
     display: block;
     z-index: 999;
+  }
+
+  .main-content {
+    padding: 0.5rem;
+  }
+
+  .title-bar {
+    display: none;
+  }
+
+  .notes-list {
+    display: none;
+  }
+
+  #editor {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
   }
 }
