@@ -204,6 +204,7 @@ rl.on("line", function (line) {
       if (!showhelp) {
         var starttime = new Date().getTime();
         var output = ok.format(ok.run(ok.parse(line), env, true)) + "\n";
+        console.log(env);
         if (showtime) {
           var endtime = new Date().getTime();
           output += "completed in " + (endtime - starttime) + "ms.\n";

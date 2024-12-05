@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html data-theme="light">
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ace.js"></script>
+    <script src="k-ok.js"></script>
+    <script src="oK.js"></script>
+    <style>
+      /* Existing styles unchanged */
+      :root {
+        --radius: 0.5rem;
+      }
+
+      :root[data-theme="light"] {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222.2 84% 4.9%;
+        --primary: 222.2 47.4% 11.2%;
+        --primary-foreground: 210 40% 98%;
+        --secondary: 210 40% 96.1%;
+        --secondary-foreground: 222.2 47.4% 11.2%;
+        --border: 214.3 31.8% 91.4%;
+        --input: 214.3 31.8% 91.4%;
+      }
+
+      :root[data-theme="dark"] {
+        --background: 222.2 84% 4.9%;
+        --foreground: 210 40% 98%;
+        --card: 222.2 84% 4.9%;
+        --card-foreground: 210 40% 98%;
+        --popover: 222.2 84% 4.9%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 210 40% 98%;
+        --primary-foreground: 222.2 47.4% 11.2%;
+        --secondary: 217.2 32.6% 17.5%;
+        --secondary-foreground: 210 40% 98%;
+        --border: 217.2 32.6% 17.5%;
+        --input: 217.2 32.6% 17.5%;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: hsl(var(--background));
+        color: hsl(var(--foreground));
+        height: 100vh;
+        display: flex;
+        overflow: hidden;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      .sidebar {
+        width: 250px;
+        border-right: 1px solid hsl(var(--border));
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        background: hsl(var(--background));
+        transition: transform 0.3s ease, background-color 0.3s ease;
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 1000;
+      }
+
+      .main-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        margin-left: 250px;
+        transition: margin 0.3s ease;
+        width: calc(100% - 250px);
+      }
+
+      .top-bar {
+        padding: 1rem;
+        border-bottom: 1px solid hsl(var(--border));
+        display: none;
+        background: hsl(var(--background));
+      }
+
+      .menu-toggle {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        color: hsl(var(--foreground));
+      }
+
+      .sidebar-header {
+        padding: 1rem;
+        border-bottom: 1px solid hsl(var(--border));
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .theme-switch {
+        position: relative;
+        width: 48px;
+        height: 24px;
+        background: hsl(var(--secondary));
+        border-radius: 12px;
+        border: 1px solid hsl(var(--border));
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .theme-switch::after {
+        content: "";
+        position: absolute;
+        left: 2px;
+        top: 2px;
+        width: 18px;
+        height: 18px;
+        background: hsl(var(--background));
+        border-radius: 50%;
+        transition: transform 0.3s ease;
+      }
+
+      .theme-switch.dark::after {
+        transform: translateX(24px);
+      }
+
+      .theme-icon {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 12px;
+      }
+
+      .sun-icon {
+        left: 6px;
+      }
+
+      .moon-icon {
+        right: 6px;
+      }
+
+      .new-file-btn {
+        background: hsl(var(--primary));
+        color: hsl(var(--primary-foreground));
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius);
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .files-list {
+        overflow-y: auto;
+        flex: 1;
+      }
+
+      .file-item {
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid hsl(var(--border));
+        cursor: pointer;
+      }
+
+      .file-item:hover {
+        background: hsl(var(--secondary));
+      }
+
+      .file-item.active {
+        background: hsl(var(--secondary));
+        font-weight: 500;
+      }
+
+      .file-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .icon-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: var(--radius);
+        color: hsl(var(--primary));
+      }
+
+      .icon-btn:hover {
+        background: hsl(var(--secondary));
+      }
+
+      .main-content {
+        flex: 1;
+        padding: 2rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #editor {
+        width: 100%;
+        flex: 1;
+        border-radius: var(--radius);
+        border: 1px solid hsl(var(--border));
+      }
+
+      .edit-dialog {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: hsl(var(--background));
+        padding: 1.5rem;
+        border-radius: var(--radius);
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        border: 1px solid hsl(var(--border));
+        display: none;
+        z-index: 2000;
+      }
+
+      .edit-dialog.active {
+        display: block;
+      }
+
+      .edit-dialog input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid hsl(var(--input));
+        border-radius: var(--radius);
+        margin-bottom: 1rem;
+        background: hsl(var(--background));
+        color: hsl(var(--foreground));
+      }
+
+      .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+      }
+
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        display: none;
+        z-index: 1500;
+      }
+
+      .overlay.active {
+        display: block;
+      }
+
+      .no-file-message {
+        text-align: center;
+        padding: 2rem;
+        color: hsl(var(--foreground));
+      }
+
+      /* New styles for notes feature */
+      .title-bar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .notes-list {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+
+      .note-item {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        background: hsl(var(--secondary));
+        border-radius: var(--radius);
+        font-size: 0.875rem;
+        cursor: pointer;
+      }
+
+      .note-popover {
+        position: fixed;
+        inset: 0;
+        background: hsl(var(--background));
+        z-index: 2000;
+        display: none;
+        flex-direction: column;
+        padding: 2rem;
+      }
+
+      .note-popover.active {
+        display: flex;
+      }
+
+      .note-popover textarea {
+        flex: 1;
+        margin: 1rem 0;
+        padding: 1rem;
+        border: 1px solid hsl(var(--border));
+        border-radius: var(--radius);
+        background: hsl(var(--background));
+        color: hsl(var(--foreground));
+        font-family: inherit;
+        resize: none;
+      }
+
+      .note-popover input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid hsl(var(--input));
+        border-radius: var(--radius);
+        background: hsl(var(--background));
+        color: hsl(var(--foreground));
+        margin-bottom: 1rem;
+      }
+
+      /* New styles for line results */
+      .ace-line-result {
+        position: absolute;
+        right: 10px;
+        color: #666;
+        pointer-events: none;
+        font-style: italic;
+      }
+
+      .ace-line-error {
+        color: #f44;
+      }
+
+      @media (max-width: 768px) {
+        .sidebar {
+          transform: translateX(-100%);
+        }
+
+        .sidebar.active {
+          transform: translateX(0);
+        }
+
+        .main-wrapper {
+          margin-left: 0;
+          width: 100%;
+        }
+
+        .top-bar {
+          display: flex;
+          align-items: center;
+        }
+
+        .overlay.sidebar-overlay {
+          display: none;
+        }
+
+        .overlay.sidebar-overlay.active {
+          display: block;
+          z-index: 999;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>Files</h2>
+        <div class="header-actions">
+          <button class="new-file-btn" onclick="createNewFile()">📄 New</button>
+          <button class="theme-switch" id="themeSwitch" onclick="toggleTheme()">
+            <span class="theme-icon sun-icon">☀️</span>
+            <span class="theme-icon moon-icon">🌙</span>
+          </button>
+        </div>
+      </div>
+      <div class="files-list" id="filesList"></div>
+    </div>
+
+    <div class="main-wrapper">
+      <div class="top-bar">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      </div>
+      <div class="main-content" id="mainContent">
+        <div class="no-file-message">Select a file to view its contents</div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div
+      class="overlay sidebar-overlay"
+      id="sidebarOverlay"
+      onclick="closeSidebar()"
+    ></div>
+
+    <div class="edit-dialog" id="editDialog">
+      <input type="text" id="fileNameInput" placeholder="File name" />
+      <div class="dialog-actions">
+        <button class="new-file-btn" onclick="closeDialog()">Cancel</button>
+        <button class="new-file-btn" onclick="saveFileName()">Save</button>
+      </div>
+    </div>
+
+    <div class="note-popover" id="notePopover">
+      <input type="text" id="noteTitleInput" placeholder="Note title" />
+      <textarea id="noteContentInput" placeholder="Note content"></textarea>
+      <div class="dialog-actions">
+        <button class="new-file-btn" onclick="closeNotePopover()">
+          Cancel
+        </button>
+        <button class="new-file-btn" onclick="saveNote()">Save</button>
+      </div>
+    </div>
+
+    <script>
+      let files = [];
+      let currentFileId = null;
+      let editingFileId = null;
+      let editor = null;
+      let editingNoteId = null;
+      let environments = new Map(); // Store oK environments for each file
+      let lineResults = new Map(); // Store results per line for each file
+
+      // Load files from localStorage
+      function loadFiles() {
+        const savedFiles = localStorage.getItem("editor_files");
+        if (savedFiles) {
+          files = JSON.parse(savedFiles);
+          renderFiles();
+
+          // Load last open file
+          const lastOpenFileId = localStorage.getItem("last_open_file");
+          if (lastOpenFileId) {
+            const fileExists = files.some(
+              (f) => f.id === parseInt(lastOpenFileId)
+            );
+            if (fileExists) {
+              selectFile(parseInt(lastOpenFileId));
+            }
+          }
+        }
+      }
+
+      // Save files to localStorage
+      function saveFiles() {
+        localStorage.setItem("editor_files", JSON.stringify(files));
+      }
+
+      // Save last open file
+      function saveLastOpenFile(fileId) {
+        localStorage.setItem("last_open_file", fileId);
+      }
+
+      // Theme handling
+      function toggleTheme() {
+        const html = document.documentElement;
+        const themeSwitch = document.getElementById("themeSwitch");
+        const currentTheme = html.getAttribute("data-theme");
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+
+        html.setAttribute("data-theme", newTheme);
+        themeSwitch.classList.toggle("dark");
+
+        // Update editor theme
+        if (editor) {
+          editor.setTheme(
+            newTheme === "dark"
+              ? "ace/theme/tomorrow_night"
+              : "ace/theme/tomorrow"
+          );
+        }
+
+        // Save theme preference
+        localStorage.setItem("theme", newTheme);
+      }
+
+      // Load saved theme preference
+      function loadTheme() {
+        const savedTheme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", savedTheme);
+        if (savedTheme === "dark") {
+          document.getElementById("themeSwitch").classList.add("dark");
+        }
+      }
+
+      function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("active");
+        document.getElementById("sidebarOverlay").classList.toggle("active");
+      }
+
+      function closeSidebar() {
+        document.getElementById("sidebar").classList.remove("active");
+        document.getElementById("sidebarOverlay").classList.remove("active");
+      }
+
+      function createNewFile() {
+        const newFile = {
+          id: Date.now(),
+          name: "Untitled",
+          content: "",
+          notes: [],
+        };
+        files.push(newFile);
+        saveFiles();
+        renderFiles();
+        selectFile(newFile.id);
+      }
+
+      function deleteFile(id) {
+        files = files.filter((f) => f.id !== id);
+        environments.delete(id); // Clean up environment when file is deleted
+        lineResults.delete(id); // Clean up results when file is deleted
+        saveFiles();
+        if (currentFileId === id) {
+          currentFileId = null;
+          localStorage.removeItem("last_open_file");
+          document.getElementById("mainContent").innerHTML =
+            '<div class="no-file-message">Select a file to view its contents</div>';
+          editor = null;
+        }
+        renderFiles();
+      }
+
+      function editFileName(id) {
+        editingFileId = id;
+        const file = files.find((f) => f.id === id);
+        document.getElementById("fileNameInput").value = file.name;
+        document.getElementById("editDialog").classList.add("active");
+        document.getElementById("overlay").classList.add("active");
+      }
+
+      function closeDialog() {
+        document.getElementById("editDialog").classList.remove("active");
+        document.getElementById("overlay").classList.remove("active");
+        editingFileId = null;
+      }
+
+      function saveFileName() {
+        const newName = document.getElementById("fileNameInput").value.trim();
+        if (newName && editingFileId) {
+          const file = files.find((f) => f.id === editingFileId);
+          if (file) {
+            file.name = newName;
+            saveFiles();
+            renderFiles();
+            if (currentFileId === editingFileId) {
+              renderCurrentFile();
+            }
+          }
+        }
+        closeDialog();
+      }
+
+      function executeCode(code, env) {
+        try {
+          const lines = code.split("\n");
+          const results = new Map();
+          let result;
+
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line) {
+              try {
+                result = run(parse(line), env);
+                results.set(i, { type: "result", value: format(result) });
+              } catch (e) {
+                results.set(i, { type: "error", value: e.message });
+              }
+            }
+          }
+
+          lineResults.set(currentFileId, results);
+          updateLineResults();
+          return result;
+        } catch (e) {
+          console.error("Error executing code:", e);
+          return null;
+        }
+      }
+
+      function updateLineResults() {
+        if (!currentFileId || !editor) return;
+
+        // Remove existing result widgets
+        editor.session.removeMarkers();
+
+        const results = lineResults.get(currentFileId);
+        if (!results) return;
+
+        const cursorLine = editor.getCursorPosition().row;
+        const result = results.get(cursorLine);
+
+        if (result) {
+          // Create result widget
+          const resultDiv = document.createElement("div");
+          resultDiv.className = `ace-line-result ${
+            result.type === "error" ? "ace-line-error" : ""
+          }`;
+          resultDiv.textContent = result.value;
+
+          // Add widget to current line
+          editor.session.addGutterDecoration(
+            cursorLine,
+            result.type === "error" ? "ace-line-error" : ""
+          );
+          editor.session.widgetManager?.addLineWidget({
+            row: cursorLine,
+            el: resultDiv,
+            type: "lineWidget",
+            fixedWidth: true,
+          });
+        }
+      }
+
+      function initEditor() {
+        editor = ace.edit("editor");
+        editor.setTheme(
+          document.documentElement.getAttribute("data-theme") === "dark"
+            ? "ace/theme/tomorrow_night"
+            : "ace/theme/tomorrow"
+        );
+        editor.session.setMode("ace/mode/k-ok");
+        editor.setOptions({
+          fontSize: "14px",
+          showPrintMargin: false,
+          enableBasicAutocompletion: true,
+          enableLiveAutocompletion: true,
+          behavioursEnabled: false,
+        });
+
+        // Create widget manager if it doesn't exist
+        if (!editor.session.widgetManager) {
+          editor.session.widgetManager = new ace.require(
+            "ace/line_widgets"
+          ).LineWidgets(editor.session);
+          editor.session.widgetManager.attach(editor);
+        }
+
+        // Save content on change with debounce
+        let saveTimeout;
+        editor.session.on("change", function () {
+          if (currentFileId) {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+              const file = files.find((f) => f.id === currentFileId);
+              if (file) {
+                file.content = editor.getValue();
+                saveFiles();
+
+                // Re-execute code to update results
+                const env = environments.get(currentFileId);
+                if (env) {
+                  executeCode(file.content, env);
+                }
+              }
+            }, 500);
+          }
+        });
+
+        // Update results when cursor moves
+        editor.selection.on("changeCursor", function () {
+          updateLineResults();
+        });
+      }
+
+      function selectFile(id) {
+        currentFileId = id;
+        renderCurrentFile();
+        saveLastOpenFile(id);
+        renderFiles();
+        if (window.innerWidth <= 768) {
+          closeSidebar();
+        }
+
+        // Get or create environment for this file
+        if (!environments.has(id)) {
+          environments.set(id, baseEnv());
+        }
+
+        // Execute all code in the file
+        const file = files.find((f) => f.id === id);
+        if (file && file.content) {
+          executeCode(file.content, environments.get(id));
+
+          // Move cursor to end of last line after a short delay to ensure editor is ready
+          setTimeout(() => {
+            if (editor) {
+              const lastLine = editor.session.getLength() - 1;
+              const lastCol = editor.session.getLine(lastLine).length;
+              editor.gotoLine(lastLine + 1, lastCol);
+              editor.focus();
+            }
+          }, 100);
+        }
+      }
+
+      function renderCurrentFile() {
+        const file = files.find((f) => f.id === currentFileId);
+        if (!file) return;
+
+        const notesList = file.notes
+          ? file.notes
+              .map(
+                (note) => `
+          <div class="note-item" onclick="insertNoteTitle('${note.title}')">
+            ${note.title}
+            <button class="icon-btn" onclick="event.stopPropagation(); editNote(${note.id})">✏️</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); copyNoteTitle('${note.title}')">📋</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); deleteNote(${note.id})">🗑️</button>
+          </div>
+        `
+              )
+              .join("")
+          : "";
+
+        document.getElementById("mainContent").innerHTML = `
+          <div class="title-bar">
+            <h2>${file.name}</h2>
+            <button class="icon-btn" onclick="openNotePopover()">➕</button>
+          </div>
+          <div class="notes-list">
+            ${notesList}
+          </div>
+          <div id="editor"></div>
+        `;
+
+        initEditor();
+        editor.setValue(file.content, -1);
+      }
+
+      function renderFiles() {
+        const filesList = document.getElementById("filesList");
+        filesList.innerHTML = files
+          .map(
+            (file) => `
+              <div class="file-item ${
+                file.id === currentFileId ? "active" : ""
+              }" onclick="selectFile(${file.id})">
+                <span>${file.name}</span>
+                <div class="file-actions">
+                  <button class="icon-btn" onclick="event.stopPropagation(); editFileName(${
+                    file.id
+                  })">
+                    ✏️
+                  </button>
+                  <button class="icon-btn" onclick="event.stopPropagation(); deleteFile(${
+                    file.id
+                  })">
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            `
+          )
+          .join("");
+      }
+
+      // Note handling functions
+      function openNotePopover(noteId = null) {
+        const notePopover = document.getElementById("notePopover");
+        const titleInput = document.getElementById("noteTitleInput");
+        const contentInput = document.getElementById("noteContentInput");
+
+        if (noteId) {
+          const file = files.find((f) => f.id === currentFileId);
+          const note = file.notes.find((n) => n.id === noteId);
+          if (note) {
+            editingNoteId = noteId;
+            titleInput.value = note.title;
+            contentInput.value = note.content;
+          }
+        } else {
+          editingNoteId = null;
+          titleInput.value = "";
+          contentInput.value = "";
+        }
+
+        notePopover.classList.add("active");
+      }
+
+      function closeNotePopover() {
+        document.getElementById("notePopover").classList.remove("active");
+        editingNoteId = null;
+      }
+
+      function saveNote() {
+        const title = document.getElementById("noteTitleInput").value.trim();
+        const content = document
+          .getElementById("noteContentInput")
+          .value.trim();
+
+        if (title && content) {
+          const file = files.find((f) => f.id === currentFileId);
+          if (file) {
+            if (!file.notes) file.notes = [];
+
+            if (editingNoteId) {
+              const noteIndex = file.notes.findIndex(
+                (n) => n.id === editingNoteId
+              );
+              if (noteIndex !== -1) {
+                file.notes[noteIndex] = { id: editingNoteId, title, content };
+              }
+            } else {
+              file.notes.push({ id: Date.now(), title, content });
+            }
+
+            saveFiles();
+            renderCurrentFile();
+          }
+        }
+        closeNotePopover();
+      }
+
+      function editNote(noteId) {
+        openNotePopover(noteId);
+      }
+
+      function deleteNote(noteId) {
+        const file = files.find((f) => f.id === currentFileId);
+        if (file && file.notes) {
+          file.notes = file.notes.filter((n) => n.id !== noteId);
+          saveFiles();
+          renderCurrentFile();
+        }
+      }
+
+      function copyNoteTitle(title) {
+        if (editor) {
+          const position = editor.getCursorPosition();
+          editor.session.insert(position, title);
+          editor.focus();
+        }
+      }
+
+      function insertNoteTitle(title) {
+        if (editor) {
+          const position = editor.getCursorPosition();
+          editor.session.insert(position, title);
+          editor.focus();
+        }
+      }
+
+      // Initialize
+      loadTheme();
+      loadFiles();
+      renderFiles();
+    </script>
+  </body>
+</html>
