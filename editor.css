@@ -202,7 +202,7 @@ body {
 
 .main-content {
   flex: 1;
-  padding: 2rem;
+  padding: 10px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -446,5 +446,13 @@ body {
     border-radius: 0;
     border-left: none;
     border-right: none;
+    touch-action: none;
+    resize: none;
+    -webkit-text-size-adjust: none;
+  }
+
+  .ace_editor {
+    touch-action: none !important;
+    resize: none !important;
   }
 }
