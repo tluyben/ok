@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html data-theme="light">
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ace.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ext-language_tools.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ext-modelist.js"></script>
@@ -42,7 +45,11 @@
     </div>
 
     <div class="overlay" id="overlay"></div>
-    <div class="overlay sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    <div
+      class="overlay sidebar-overlay"
+      id="sidebarOverlay"
+      onclick="closeSidebar()"
+    ></div>
 
     <div class="edit-dialog" id="editDialog">
       <input type="text" id="fileNameInput" placeholder="File name" />
@@ -56,7 +63,9 @@
       <input type="text" id="noteTitleInput" placeholder="Note title" />
       <textarea id="noteContentInput" placeholder="Note content"></textarea>
       <div class="dialog-actions">
-        <button class="new-file-btn" onclick="closeNotePopover()">Cancel</button>
+        <button class="new-file-btn" onclick="closeNotePopover()">
+          Cancel
+        </button>
         <button class="new-file-btn" onclick="saveNote()">Save</button>
       </div>
     </div>
@@ -80,7 +89,9 @@
 
           const lastOpenFileId = localStorage.getItem("last_open_file");
           if (lastOpenFileId) {
-            const fileExists = files.some((f) => f.id === parseInt(lastOpenFileId));
+            const fileExists = files.some(
+              (f) => f.id === parseInt(lastOpenFileId)
+            );
             if (fileExists) {
               selectFile(parseInt(lastOpenFileId));
             }
@@ -106,7 +117,11 @@
         themeSwitch.classList.toggle("dark");
 
         if (editor) {
-          editor.setTheme(newTheme === "dark" ? "ace/theme/tomorrow_night" : "ace/theme/tomorrow");
+          editor.setTheme(
+            newTheme === "dark"
+              ? "ace/theme/tomorrow_night"
+              : "ace/theme/tomorrow"
+          );
         }
 
         localStorage.setItem("theme", newTheme);
@@ -225,7 +240,9 @@
           }
         } else {
           const existingNote = file.notes.find((n) => n.title === noteName);
-          const content = Array.isArray(tojs(y)) ? tojs(y).join("\n") : format(y);
+          const content = Array.isArray(tojs(y))
+            ? tojs(y).join("\n")
+            : format(y);
 
           if (existingNote) {
             existingNote.content = content;
@@ -363,7 +380,11 @@
                 const newLines = newContent.split("\n");
 
                 let changedLineIndex = -1;
-                for (let i = 0; i < Math.max(oldLines.length, newLines.length); i++) {
+                for (
+                  let i = 0;
+                  i < Math.max(oldLines.length, newLines.length);
+                  i++
+                ) {
                   if (oldLines[i] !== newLines[i]) {
                     changedLineIndex = i;
                     break;
@@ -421,10 +442,8 @@
         const file = files.find((f) => f.id === currentFileId);
         if (!file) return;
 
-        // Update mobile header
         document.getElementById("mobileTitle").textContent = file.name;
         
-        // Update mobile notes
         const mobileNotesList = document.getElementById("mobileNotes");
         if (mobileNotesList) {
           mobileNotesList.innerHTML = file.notes
@@ -443,7 +462,6 @@
             : "";
         }
 
-        // Update desktop view
         const notesList = file.notes
           ? file.notes
               .map(
@@ -463,9 +481,7 @@
           <div class="title-bar">
             <h2>${file.name}</h2>
             <button class="icon-btn" onclick="openNotePopover()">➕</button>
-          </div>
-          <div class="notes-list">
-            ${notesList}
+            <div class="notes-list">${notesList}</div>
           </div>
           <div id="editor"></div>
         `;
@@ -479,11 +495,17 @@
         filesList.innerHTML = files
           .map(
             (file) => `
-              <div class="file-item ${file.id === currentFileId ? "active" : ""}" onclick="selectFile(${file.id})">
+              <div class="file-item ${
+                file.id === currentFileId ? "active" : ""
+              }" onclick="selectFile(${file.id})">
                 <span>${file.name}</span>
                 <div class="file-actions">
-                  <button class="icon-btn" onclick="event.stopPropagation(); editFileName(${file.id})">✏️</button>
-                  <button class="icon-btn" onclick="event.stopPropagation(); deleteFile(${file.id})">🗑️</button>
+                  <button class="icon-btn" onclick="event.stopPropagation(); editFileName(${
+                    file.id
+                  })">✏️</button>
+                  <button class="icon-btn" onclick="event.stopPropagation(); deleteFile(${
+                    file.id
+                  })">🗑️</button>
                 </div>
               </div>
             `
@@ -520,7 +542,9 @@
 
       function saveNote() {
         const title = document.getElementById("noteTitleInput").value.trim();
-        const content = document.getElementById("noteContentInput").value.trim();
+        const content = document
+          .getElementById("noteContentInput")
+          .value.trim();
 
         if (title && content) {
           const file = files.find((f) => f.id === currentFileId);
@@ -528,7 +552,9 @@
             if (!file.notes) file.notes = [];
 
             if (editingNoteId) {
-              const noteIndex = file.notes.findIndex((n) => n.id === editingNoteId);
+              const noteIndex = file.notes.findIndex(
+                (n) => n.id === editingNoteId
+              );
               if (noteIndex !== -1) {
                 file.notes[noteIndex] = { id: editingNoteId, title, content };
               }
