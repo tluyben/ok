@@ -1,408 +1,606 @@
-<!-- an attempt to create a simple browser REPL for oK. -->
-<html>
-<head><title>oK repl</title></head>
-<style>
-body {
-	background-color: gray;
-	font-smooth: never;
-	-webkit-font-smoothing : none;
-	font-family: "Monaco", monospace;
-	font-size: 9pt;
-	height: 100%;
-	width: 100%;
-	overflow: hidden;
-}
-a {
-	color: black;
-}
-#editor {
-	background-color: orange;
-	position: absolute;
-	top: 5%;
-	left: 50%;
-	width: 40%;
-	height: 90%;
-}
-textarea {
-	background-color: lightyellow;
-	font-smooth: never;
-	-webkit-font-smoothing : none;
-	font-family: "Monaco", monospace;
-	font-size: 9pt;
-	width: 100%;
-	height: 100%;
-	border: none;
-	border-left: 1px solid gray;
-	-moz-tab-size:4;
-	-o-tab-size:4;
-	tab-size:4;
-}
-#repl {
-	background-color: orange;
-	position: absolute;
-	display: table;
-	top:5%;
-	left:10%;
-	width:80%;
-	height:90%;
-}
-#scroll-w {
-	display: table-row;
-	height: 100%;
-}
-#scroll-h {
-	position: relative;
-	padding: 5px 5px 0 5px;
-	overflow-y: scroll;
-	background-color: lightgray;
-	height: 100%;
-	word-wrap: break-word;
-	word-break: break-all;
-	hyphens: none;
-	-moz-box-sizing: border-box;
-}
-#scroll {
-	position: absolute;
-	bottom: 0px;
-	max-height: 100%;
-}
-#prompt {
-	display: table-row;
-	background-color: black;
-	font-smooth: never;
-	-webkit-font-smoothing : none;
-	font-family: "Monaco", monospace;
-	font-size: 9pt;
-	color: white;
-	padding: 5px 0px 5px 20px;
-	margin: 0;
-	border: none;
-	bottom: 0px;
-	width: 100%;
-	height: 25px;
-	max-height: 25px;
-	overflow: hidden;
-}
-.err {
-	color: red;
-	background-color: pink;
-	display: none;
-}
-textarea:focus {
-	outline: none;
-}
-::-webkit-scrollbar {
-	display: none;
-}
-</style>
+<!DOCTYPE html>
+<html data-theme="light">
+  <head>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ext-language_tools.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/ext-modelist.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/theme-tomorrow.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/theme-tomorrow_night.js"></script>
+    <script src="k-ok.js"></script>
+    <script src="oK.js"></script>
+    <script src="convert.js"></script>
+    <link rel="stylesheet" href="editor.css" />
+  </head>
+  <body>
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>Files</h2>
+        <div class="header-actions">
+          <button class="new-file-btn" onclick="createNewFile()">📄 New</button>
+          <button class="theme-switch" id="themeSwitch" onclick="toggleTheme()">
+            <span class="theme-icon sun-icon">☀️</span>
+            <span class="theme-icon moon-icon">🌙</span>
+          </button>
+        </div>
+      </div>
+      <div class="files-list" id="filesList"></div>
+    </div>
 
-<body>
-	<div id="repl">
-		<div id="scroll-w"><div id="scroll-h"><div id="scroll"></div></div></div>
-		<div><textarea id="prompt" autocomplete="off"></textarea></div>
-	</div>
-	<div id="editor" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="display: none;">
-		<textarea id="textedit"></textarea>
-	</div>
-</body>
+    <div class="main-wrapper">
+      <div class="top-bar">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="mobile-header">
+          <h2 id="mobileTitle"></h2>
+          <button class="icon-btn" onclick="openNotePopover()">➕</button>
+          <div class="mobile-notes" id="mobileNotes"></div>
+        </div>
+      </div>
+      <div class="main-content" id="mainContent">
+        <div class="no-file-message">Select a file to view its contents</div>
+      </div>
+    </div>
 
-<script src="oK.js"></script>
-<script src="convert.js"></script>
+    <div class="overlay" id="overlay"></div>
+    <div
+      class="overlay sidebar-overlay"
+      id="sidebarOverlay"
+      onclick="closeSidebar()"
+    ></div>
 
-<script>
+    <div class="edit-dialog" id="editDialog">
+      <input type="text" id="fileNameInput" placeholder="File name" />
+      <div class="dialog-actions">
+        <button class="new-file-btn" onclick="closeDialog()">Cancel</button>
+        <button class="new-file-btn" onclick="saveFileName()">Save</button>
+      </div>
+    </div>
 
-document.getElementById("textedit").onkeydown = function(event) {
-	if (event.keyCode == 13 && event.shiftKey) {
-		saveBuffer();
-		if (this.selectionStart == this.selectionEnd) {
-			prompt.value = this.value;
-		}
-		else {
-			prompt.value = this.value.substring(this.selectionStart, this.selectionEnd);
-		}
-		processLine();
-		prompt.value = "";
-		printRepl("&nbsp;&nbsp");
-		return false;
-	}
-	if (event.keyCode == 9) {
-		var text  = this.value;
-		var start = this.selectionStart;
-		var end   = this.selectionEnd;
-		this.value = text.substring(0, start) + '\t' + text.substring(end);
-		this.selectionStart = this.selectionEnd = start + 1;
-		saveBuffer();
-		return false;
-	}
-	saveBuffer();
-};
-function saveBuffer() {
-	localStorage.setItem("oKeditbuffer", document.getElementById("textedit").value);
-}
-function loadBuffer() {
-	var editbuffer = localStorage.getItem("oKeditbuffer");
-	if (!editbuffer) { editbuffer = "/ contents of this editor is automatically saved in local storage."; }
-	document.getElementById("textedit").value = editbuffer;
-}
-function printForm(x) {
-	return stok(format(x));
-}
+    <div class="note-popover" id="notePopover">
+      <input type="text" id="noteTitleInput" placeholder="Note title" />
+      <textarea id="noteContentInput" placeholder="Note content"></textarea>
+      <div class="dialog-actions">
+        <button class="new-file-btn" onclick="closeNotePopover()">
+          Cancel
+        </button>
+        <button class="new-file-btn" onclick="saveNote()">Save</button>
+      </div>
+    </div>
 
-var env = baseEnv();
-var entries = [];
-var entryIndex = 0;
-var partial = "";
-var eid = 0;
+    <script>
+      let files = [];
+      let currentFileId = null;
+      let editingFileId = null;
+      let editor = null;
+      let editingNoteId = null;
+      let environments = new Map();
+      let lineResults = new Map();
+      let currentMarkers = [];
+      let lastContent = "";
 
-setIO("0:", 2, print);
-setIO("0:", 4, print);
-setIO("0:", 1, readText);
-setIO("1:", 1, readJSON);
-setIO("5:", 0, printForm);
-setIO("5:", 1, printForm);
+      function loadFiles() {
+        const savedFiles = localStorage.getItem("editor_files");
+        if (savedFiles) {
+          files = JSON.parse(savedFiles);
+          renderFiles();
 
-var repl = document.getElementById("repl");
-var scroll = document.getElementById("scroll");
-var panel = document.getElementById("scroll-h");
-var prompt = document.getElementById("prompt");
+          const lastOpenFileId = localStorage.getItem("last_open_file");
+          if (lastOpenFileId) {
+            const fileExists = files.some(
+              (f) => f.id === parseInt(lastOpenFileId)
+            );
+            if (fileExists) {
+              selectFile(parseInt(lastOpenFileId));
+            }
+          }
+        }
+      }
 
-help = `oK has atom, list (2;\`c), dict \`a\`b!(2;\`c) and func {[x;y]x+y}
-20 primitives/verbs, 6 operators/adverbs and 3 system functions
+      function saveFiles() {
+        localStorage.setItem("editor_files", JSON.stringify(files));
+      }
 
-Verb       (unary)    Adverb             Noun         (null)
-: gets                '  each            name  \`a\`b    \`
-+ plus      flip      /  over|join       char  "ab"    " "
-- minus     negate    \\  scan|split      num   2 .3    0N(nan) 0w(inf)
-* times     first     ': eachprior       hex   0x2a2b
-% divide    sqrt      /: eachright       bool  01000b
-! mod|map   enum|key  \\: eachleft
-& min|and   where
-| max|or    reverse   System             list (2;3.4;\`ab)
-< less      asc       0: url r/w(line)   dict \`a\`b!(2;\`c)
-> more      desc      1: json r/w        view f::32+1.8*c
-= equal     group     5: printable form  func {[c]32+1.8*c}
-~ match     not
-, concat    enlist
-^ fill|out  null                           \\t x   time
-# take|rsh  count                          \\e     editor
-_ drop|cut  floor                          \\r run editor
-$ cast|sum  string    $[c;t;f]     COND    \\v variables
-? find|rnd  distinct  ?[x;I;[f;]y] insert  \\f functions
-@ at        type      @[x;i;[f;]y] amend   \\c clear log
-. dot       eval|val  .[x;i;[f;]y] dmend   \\u make url
+      function saveLastOpenFile(fileId) {
+        localStorage.setItem("last_open_file", fileId);
+      }
 
-A manual of the oK language is available with more details:
-    https://github.com/JohnEarnest/ok/blob/gh-pages/docs/Manual.md
-A more general introduction to array programming is also provided:
-    https://github.com/JohnEarnest/ok/blob/gh-pages/docs/Programming.md
-`
+      function toggleTheme() {
+        const html = document.documentElement;
+        const themeSwitch = document.getElementById("themeSwitch");
+        const currentTheme = html.getAttribute("data-theme");
+        const newTheme = currentTheme === "light" ? "dark" : "light";
 
-prompt.focus();
-prompt.onkeydown = processInput;
-scroll.innerHTML =
-	"Welcome to <a href='https://github.com/JohnEarnest/ok' target='_blank'>oK</a> v"+version+
-	"<br>(inspired by <a href='http://kparc.com/k.txt' target='_blank'>K5</a>; &#92;h for help)"+
-	"<br>&nbsp;&nbsp;";
+        html.setAttribute("data-theme", newTheme);
+        themeSwitch.classList.toggle("dark");
 
-function escapeHTML(text) {
-	text += "";
-	text = text.replace(/&/g, "&amp;");
-	text = text.replace(/</g, "&lt;");
-	text = text.replace(/>/g, "&gt;");
-	text = text.replace(/ /g, "&nbsp;");
-	text = text.replace(/\r/g, "<font color='gray'>&rarr;</font>");
-	text = text.replace(/\n/g, "<br>");
-	return text;
-}
+        if (editor) {
+          editor.setTheme(
+            newTheme === "dark"
+              ? "ace/theme/tomorrow_night"
+              : "ace/theme/tomorrow"
+          );
+        }
 
-function toggle(id) {
-	e = document.getElementById(id);
-	e.style.display = e.style.display == "none" ? "inline" : "none";
-}
+        localStorage.setItem("theme", newTheme);
+      }
 
-function processInput(e) {
-	if (e.keyCode == 38) {
-		if (entries.length == 0) { return false; }
-		if (entryIndex > 0) {
-			entryIndex--;
-			prompt.value = entries[entryIndex];
-		}
-		return false;
-	}
-	if (e.keyCode == 40) {
-		if (entries.length == 0 || entryIndex >= entries.length-1) {
-			entryIndex = entries.length;
-			prompt.value = "";
-			return false;
-		}
-		entryIndex++;
-		prompt.value = entries[entryIndex];
-		return false;
-	}
-	if (e.keyCode != 13) { return; }
-	printReplBare("<font color='gray'>"+escapeHTML(prompt.value)+"</font>");
-	if (prompt.value != "") { processLine(); }
-	if (prompt.value != "") { entries.push(prompt.value); }
-	entryIndex = entries.length;
-	prompt.value = "";
-	printRepl(partial == "" ? "&nbsp;&nbsp" : "&gt;&nbsp;");
-	return false;
-}
+      function loadTheme() {
+        const savedTheme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", savedTheme);
+        if (savedTheme === "dark") {
+          document.getElementById("themeSwitch").classList.add("dark");
+        }
+      }
 
-function printEnv(filter, label) {
-	var found = {};
-	var len = 0;
-	for (var z = 0; z < env.d.k.v.length; z++) {
-		var key = env.d.k.v[z].v
-		var val = env.d.v.v[z]
-		if (filter(val)) {
-			len = Math.max(key.length, len)
-			found[key] = format(val)
-		}
-	}
-	for(var name in found) {
-		var n = name; for(var x=(len+1 - n.length); x>0; x--) { n += "&nbsp;"; }
-		printRepl(n + ": " + found[name]);
-	}
-	if (len == 0) {
-		printRepl("no "+label+" defined.");
-	}
-	printRepl("");
-}
+      function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("active");
+        document.getElementById("sidebarOverlay").classList.toggle("active");
+      }
 
-function processLine() {
-	if (prompt.value == "\\\\") { partial = ""; return; }
-	if (prompt.value == "\\e") {
-		var editor = document.getElementById("editor");
-		if (editor.style.display == "inline") {
-			editor.style.display = "none";
-			repl.style.width = "80%";
-			saveBuffer();
-		}
-		else {
-			editor.style.display = "inline";
-			repl.style.width = "40%";
-			loadBuffer();
-			document.getElementById("textedit").focus();
-		}
-		return;
-	}
-	if (prompt.value == "\\r") {
-		saveBuffer();
-		prompt.value = document.getElementById("textedit").value;
-	}
-	if (prompt.value == "\\c") {
-		scroll.innerHTML = "";
-		panel.scrollTop = panel.scrollHeight;
-		return;
-	}
-	if (prompt.value == "\\f") {
-		printEnv(function(v) { return v.t >= 5 && v.t != 13; }, "functions");
-		return;
-	}
-	if (prompt.value == "\\v") {
-		printEnv(function(v) { return v.t < 5; }, "variables");
-		return;
-	}
-	if (prompt.value == "\\h") {
-		printRepl(escapeHTML(help));
-		return;
-	}
-	if (prompt.value == "kOS") { printRepl("one system/all devices"); return; }
-	if (prompt.value.lastIndexOf("\\u") == 0) {
-		var code = prompt.value.slice(2);
-		var enc = encodeURIComponent(code).replace(/[!'()*]/g, function(c) {
-			return '%' + c.charCodeAt(0).toString(16);
-		});
-		var url = document.location + "?run=" + enc;
-		printRepl("oK code url:");
-		printRepl("<a href=\""+url+"\" target='_blank'>"+url+"</a>");
-		return;
-	}
-	var showtime = false;
-	if (prompt.value.lastIndexOf("\\t") == 0) {
-		prompt.value = prompt.value.slice(2);
-		showtime = true;
-	}
-	var parsed = null;
-	try { parsed = parse(" " + partial + "; " + prompt.value); }
-	catch(error) {
-		if (done() && (
-			error.message == "parse error. '}' expected." ||
-			error.message == "parse error. ')' expected." ||
-			error.message == "parse error. ']' expected.")) {
-			partial += ((partial!="")?";":"") + prompt.value;
-			return;
-		}
-		else {
-			printRepl("<font color='red'>"+error.message+"</font>");
-			partial = "";
-			return;
-		}
-	}
-	partial = "";
-	try {
-		var starttime = new Date().getTime();
-		printRepl(escapeHTML(format(run(parsed, env))));
-		if (showtime) {
-			var endtime = new Date().getTime();
-			printRepl("completed in "+(endtime-starttime)+"ms.");
-		}
-	}
-	catch(error) {
-		printRepl(
-			"<span style='color: red; cursor:pointer;' onclick='toggle(\"e"+(eid)+"\")'>"+error.message+
-			"<div class='err' id='e"+(eid++)+"'><br>"+escapeHTML(error.stack)+"</div></span>"
-		);
-	}
-}
+      function closeSidebar() {
+        document.getElementById("sidebar").classList.remove("active");
+        document.getElementById("sidebarOverlay").classList.remove("active");
+      }
 
-function printReplBare(x) {
-	scroll.innerHTML += x;
-	panel.scrollTop = panel.scrollHeight;
-}
+      function createNewFile() {
+        const newFile = {
+          id: Date.now(),
+          name: "Untitled",
+          content: "",
+          notes: [],
+        };
+        files.push(newFile);
+        saveFiles();
+        renderFiles();
+        selectFile(newFile.id);
+      }
 
-function printRepl(x) {
-	printReplBare("<br>");
-	printReplBare(x);
-}
+      function deleteFile(id) {
+        files = files.filter((f) => f.id !== id);
+        environments.delete(id);
+        lineResults.delete(id);
+        saveFiles();
+        if (currentFileId === id) {
+          currentFileId = null;
+          localStorage.removeItem("last_open_file");
+          document.getElementById("mainContent").innerHTML =
+            '<div class="no-file-message">Select a file to view its contents</div>';
+          editor = null;
+        }
+        renderFiles();
+      }
 
-function print(x, y) {
-	// todo: use x to select a file descriptor
-	try {
-		var t = tojs(y);
-		if (typeof t == "string") { printRepl(escapeHTML(t)); return y; }
-		if (Array.isArray(t) && t.every(function(v) { return typeof v == "string"; })) {
-			t.map(function(v) { printRepl(escapeHTML(v)); }); return y;
-		}
-	}
-	catch(e) {}
-	throw new Error("0: can only display strings or lists of strings.");
-}
+      function editFileName(id) {
+        editingFileId = id;
+        const file = files.find((f) => f.id === id);
+        document.getElementById("fileNameInput").value = file.name;
+        document.getElementById("editDialog").classList.add("active");
+        document.getElementById("overlay").classList.add("active");
+      }
 
-function readAjax(x) {
-	var url = tojs(x);
-	if (typeof url != 'string') { throw new Error("string expected."); }
-	var request = new XMLHttpRequest();
-	request.open('GET', url, false);
-	request.send(null);
-	return [request.status, request.responseText];
-}
+      function closeDialog() {
+        document.getElementById("editDialog").classList.remove("active");
+        document.getElementById("overlay").classList.remove("active");
+        editingFileId = null;
+      }
 
-function readText(x) { return tok(readAjax(x)); }
+      function saveFileName() {
+        const newName = document.getElementById("fileNameInput").value.trim();
+        if (newName && editingFileId) {
+          const file = files.find((f) => f.id === editingFileId);
+          if (file) {
+            file.name = newName;
+            saveFiles();
+            renderFiles();
+            if (currentFileId === editingFileId) {
+              renderCurrentFile();
+            }
+          }
+        }
+        closeDialog();
+      }
 
-function readJSON(x) {
-	var t = readAjax(x);
-	t[1] = JSON.parse(t[1]);
-	return tok(t);
-}
+      function readNote(x) {
+        if (!currentFileId) return k(3, []);
+        const file = files.find((f) => f.id === currentFileId);
+        if (!file || !file.notes) return k(3, []);
+        const noteName = tojs(x);
+        const note = file.notes.find((n) => n.title === noteName);
+        if (!note) return k(3, []);
+        const contentArray = note.content.split("\n");
+        return tok(contentArray);
+      }
 
-var urlstring = location.search.match(/run=([a-zA-Z0-9-_.!~*'()%]+)/);
-if (urlstring) {
-	var code = decodeURIComponent(urlstring[1]).trim();
-	printRepl("from url ");
-	prompt.value = code;
-	processInput({keyCode:13});
-}
-</script>
+      function writeNote(x, y) {
+        if (!currentFileId) return y;
+        const file = files.find((f) => f.id === currentFileId);
+        if (!file) return y;
+        if (!file.notes) file.notes = [];
+
+        const noteName = tojs(x);
+        if (noteName.length === 0) {
+          const s = tojs(y);
+          if (Array.isArray(s)) {
+            const result = s.join("\n") + "\n";
+            const resultDiv = document.createElement("div");
+            resultDiv.className = "ace-line-result";
+            resultDiv.textContent = result;
+            if (editor && editor.session.widgetManager) {
+              const cursorLine = editor.getCursorPosition().row;
+              editor.session.widgetManager.addLineWidget({
+                row: cursorLine,
+                el: resultDiv,
+                type: "lineWidget",
+                fixedWidth: true,
+              });
+            }
+          }
+        } else {
+          const existingNote = file.notes.find((n) => n.title === noteName);
+          const content = Array.isArray(tojs(y))
+            ? tojs(y).join("\n")
+            : format(y);
+
+          if (existingNote) {
+            existingNote.content = content;
+          } else {
+            file.notes.push({
+              id: Date.now(),
+              title: noteName,
+              content: content,
+            });
+          }
+
+          saveFiles();
+          renderCurrentFile();
+        }
+
+        return y;
+      }
+
+      function executeCode(code, env, changedLine = -1) {
+        try {
+          for (let i = 0; i < 2; i++) {
+            setIO("0:", i, readNote);
+          }
+          for (let i = 2; i < 6; i++) {
+            setIO("0:", i, writeNote);
+          }
+
+          const lines = code.split("\n");
+          const results = new Map();
+          let result;
+
+          if (changedLine !== lines.length - 1) {
+            env = baseEnv();
+          }
+
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line) {
+              try {
+                result = run(parse(line), env);
+                results.set(i, { type: "result", value: format(result) });
+              } catch (e) {
+                results.set(i, { type: "error", value: e.message });
+              }
+            }
+          }
+
+          lineResults.set(currentFileId, results);
+          environments.set(currentFileId, env);
+          updateLineResults();
+          return result;
+        } catch (e) {
+          console.error("Error executing code:", e);
+          return null;
+        }
+      }
+
+      function updateLineResults() {
+        if (!currentFileId || !editor) return;
+
+        currentMarkers.forEach((marker) => {
+          editor.session.removeGutterDecoration(marker.row, marker.className);
+          if (marker.widget) {
+            editor.session.widgetManager.removeLineWidget(marker.widget);
+          }
+        });
+        currentMarkers = [];
+
+        const results = lineResults.get(currentFileId);
+        if (!results) return;
+
+        const cursorLine = editor.getCursorPosition().row;
+        const result = results.get(cursorLine);
+
+        if (result) {
+          const resultDiv = document.createElement("div");
+          resultDiv.className = `ace-line-result ${
+            result.type === "error" ? "ace-line-error" : ""
+          }`;
+          resultDiv.textContent = "> " + result.value;
+
+          const className = result.type === "error" ? "ace-line-error" : "";
+          editor.session.addGutterDecoration(cursorLine, className);
+
+          if (!editor.session.widgetManager) {
+            const LineWidgets = ace.require("ace/line_widgets").LineWidgets;
+            editor.session.widgetManager = new LineWidgets(editor.session);
+            editor.session.widgetManager.attach(editor);
+          }
+
+          const widget = editor.session.widgetManager.addLineWidget({
+            row: cursorLine,
+            el: resultDiv,
+            type: "lineWidget",
+            fixedWidth: true,
+          });
+
+          currentMarkers.push({
+            row: cursorLine,
+            className: className,
+            widget: widget,
+          });
+        }
+      }
+
+      function initEditor() {
+        editor = ace.edit("editor");
+        editor.setTheme(
+          document.documentElement.getAttribute("data-theme") === "dark"
+            ? "ace/theme/tomorrow_night"
+            : "ace/theme/tomorrow"
+        );
+        editor.session.setMode("ace/mode/k-ok");
+        editor.setOptions({
+          fontSize: "14px",
+          showPrintMargin: false,
+          enableBasicAutocompletion: true,
+          enableLiveAutocompletion: true,
+          behavioursEnabled: false,
+        });
+
+        const LineWidgets = ace.require("ace/line_widgets").LineWidgets;
+        editor.session.widgetManager = new LineWidgets(editor.session);
+        editor.session.widgetManager.attach(editor);
+
+        let saveTimeout;
+        editor.session.on("change", function (e) {
+          if (currentFileId) {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+              const file = files.find((f) => f.id === currentFileId);
+              if (file) {
+                const newContent = editor.getValue();
+                const oldLines = lastContent.split("\n");
+                const newLines = newContent.split("\n");
+
+                let changedLineIndex = -1;
+                for (
+                  let i = 0;
+                  i < Math.max(oldLines.length, newLines.length);
+                  i++
+                ) {
+                  if (oldLines[i] !== newLines[i]) {
+                    changedLineIndex = i;
+                    break;
+                  }
+                }
+
+                file.content = newContent;
+                lastContent = newContent;
+                saveFiles();
+
+                const env = environments.get(currentFileId);
+                if (env) {
+                  executeCode(file.content, env, changedLineIndex);
+                }
+              }
+            }, 500);
+          }
+        });
+
+        editor.selection.on("changeCursor", function () {
+          updateLineResults();
+        });
+      }
+
+      function selectFile(id) {
+        currentFileId = id;
+        renderCurrentFile();
+        saveLastOpenFile(id);
+        renderFiles();
+        if (window.innerWidth <= 768) {
+          closeSidebar();
+        }
+
+        if (!environments.has(id)) {
+          environments.set(id, baseEnv());
+        }
+
+        const file = files.find((f) => f.id === id);
+        if (file && file.content) {
+          lastContent = file.content;
+          executeCode(file.content, environments.get(id));
+
+          setTimeout(() => {
+            if (editor) {
+              const lastLine = editor.session.getLength() - 1;
+              const lastCol = editor.session.getLine(lastLine).length;
+              editor.gotoLine(lastLine + 1, lastCol);
+              editor.focus();
+            }
+          }, 100);
+        }
+      }
+
+      function renderCurrentFile() {
+        const file = files.find((f) => f.id === currentFileId);
+        if (!file) return;
+
+        document.getElementById("mobileTitle").textContent = file.name;
+        
+        const mobileNotesList = document.getElementById("mobileNotes");
+        if (mobileNotesList) {
+          mobileNotesList.innerHTML = file.notes
+            ? file.notes
+                .map(
+                  (note) => `
+            <div class="note-item" onclick="insertNoteTitle('${note.title}')">
+              ${note.title}
+              <button class="icon-btn" onclick="event.stopPropagation(); editNote(${note.id})">✏️</button>
+              <button class="icon-btn" onclick="event.stopPropagation(); copyNoteTitle('${note.title}')">📋</button>
+              <button class="icon-btn" onclick="event.stopPropagation(); deleteNote(${note.id})">🗑️</button>
+            </div>
+          `
+                )
+                .join("")
+            : "";
+        }
+
+        const notesList = file.notes
+          ? file.notes
+              .map(
+                (note) => `
+          <div class="note-item" onclick="insertNoteTitle('${note.title}')">
+            ${note.title}
+            <button class="icon-btn" onclick="event.stopPropagation(); editNote(${note.id})">✏️</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); copyNoteTitle('${note.title}')">📋</button>
+            <button class="icon-btn" onclick="event.stopPropagation(); deleteNote(${note.id})">🗑️</button>
+          </div>
+        `
+              )
+              .join("")
+          : "";
+
+        document.getElementById("mainContent").innerHTML = `
+          <div class="title-bar">
+            <h2>${file.name}</h2>
+            <button class="icon-btn" onclick="openNotePopover()">➕</button>
+            <div class="notes-list">${notesList}</div>
+          </div>
+          <div id="editor"></div>
+        `;
+
+        initEditor();
+        editor.setValue(file.content, -1);
+      }
+
+      function renderFiles() {
+        const filesList = document.getElementById("filesList");
+        filesList.innerHTML = files
+          .map(
+            (file) => `
+              <div class="file-item ${
+                file.id === currentFileId ? "active" : ""
+              }" onclick="selectFile(${file.id})">
+                <span>${file.name}</span>
+                <div class="file-actions">
+                  <button class="icon-btn" onclick="event.stopPropagation(); editFileName(${
+                    file.id
+                  })">✏️</button>
+                  <button class="icon-btn" onclick="event.stopPropagation(); deleteFile(${
+                    file.id
+                  })">🗑️</button>
+                </div>
+              </div>
+            `
+          )
+          .join("");
+      }
+
+      function openNotePopover(noteId = null) {
+        const notePopover = document.getElementById("notePopover");
+        const titleInput = document.getElementById("noteTitleInput");
+        const contentInput = document.getElementById("noteContentInput");
+
+        if (noteId) {
+          const file = files.find((f) => f.id === currentFileId);
+          const note = file.notes.find((n) => n.id === noteId);
+          if (note) {
+            editingNoteId = noteId;
+            titleInput.value = note.title;
+            contentInput.value = note.content;
+          }
+        } else {
+          editingNoteId = null;
+          titleInput.value = "";
+          contentInput.value = "";
+        }
+
+        notePopover.classList.add("active");
+      }
+
+      function closeNotePopover() {
+        document.getElementById("notePopover").classList.remove("active");
+        editingNoteId = null;
+      }
+
+      function saveNote() {
+        const title = document.getElementById("noteTitleInput").value.trim();
+        const content = document
+          .getElementById("noteContentInput")
+          .value.trim();
+
+        if (title && content) {
+          const file = files.find((f) => f.id === currentFileId);
+          if (file) {
+            if (!file.notes) file.notes = [];
+
+            if (editingNoteId) {
+              const noteIndex = file.notes.findIndex(
+                (n) => n.id === editingNoteId
+              );
+              if (noteIndex !== -1) {
+                file.notes[noteIndex] = { id: editingNoteId, title, content };
+              }
+            } else {
+              file.notes.push({ id: Date.now(), title, content });
+            }
+
+            saveFiles();
+            renderCurrentFile();
+          }
+        }
+        closeNotePopover();
+      }
+
+      function editNote(noteId) {
+        openNotePopover(noteId);
+      }
+
+      function deleteNote(noteId) {
+        const file = files.find((f) => f.id === currentFileId);
+        if (file && file.notes) {
+          file.notes = file.notes.filter((n) => n.id !== noteId);
+          saveFiles();
+          renderCurrentFile();
+        }
+      }
+
+      function copyNoteTitle(title) {
+        if (editor) {
+          const position = editor.getCursorPosition();
+          editor.session.insert(position, title);
+          editor.focus();
+        }
+      }
+
+      function insertNoteTitle(title) {
+        if (editor) {
+          const position = editor.getCursorPosition();
+          editor.session.insert(position, title);
+          editor.focus();
+        }
+      }
+
+      loadTheme();
+      loadFiles();
+      renderFiles();
+    </script>
+  </body>
 </html>
