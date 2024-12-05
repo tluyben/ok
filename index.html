@@ -21,7 +21,7 @@
         background: #fffff3;
         border: 1px solid var(--border-color);
         border-radius: 8px;
-        padding: 0 20px 20px 20px;
+        padding: 0;
         max-width: 90vw;
         width: 600px;
         max-height: 80vh;
@@ -39,14 +39,25 @@
 
       .manual-close {
         position: sticky;
-        top: 10px;
+        top: 0;
+        right: 0;
         float: right;
-        background: none;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fffff3;
         border: none;
         font-size: 20px;
         cursor: pointer;
         color: var(--text-color);
-        margin: 10px -10px 0 0;
+        z-index: 2;
+        margin: 0 0 -40px 0;
+      }
+
+      .manual-content {
+        padding: 10px 40px 20px 20px;
       }
 
       .ok-title {
@@ -94,7 +105,7 @@
 
     <div class="manual-popover" id="manualPopover">
       <button class="manual-close" onclick="toggleManual()">×</button>
-      <div id="manualContent">
+      <div class="manual-content">
         <pre>oK has atom, list (2;`c), dict `a`b!(2;`c) and func {[x;y]x+y}
 20 primitives/verbs, 6 operators/adverbs and 3 system functions
 
