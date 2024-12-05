@@ -554,7 +554,7 @@ oK has atom, list (2;`c), dict `a`b!(2;`c) and func {[x;y]x+y}
             const line = lines[i].trim();
             if (line) {
               try {
-                result = run(parse(line), env);
+                result = run(parse(line), env, true);
                 results.set(i, { type: "result", value: format(result) });
               } catch (e) {
                 results.set(i, { type: "error", value: e.message });
@@ -631,8 +631,8 @@ oK has atom, list (2;`c), dict `a`b!(2;`c) and func {[x;y]x+y}
         editor.setOptions({
           fontSize: "14px",
           showPrintMargin: false,
-          enableBasicAutocompletion: true,
-          enableLiveAutocompletion: true,
+          // enableBasicAutocompletion: true,
+          // enableLiveAutocompletion: true,
           behavioursEnabled: false,
         });
 
