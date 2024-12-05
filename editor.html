@@ -8,6 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.6/theme-tomorrow_night.js"></script>
     <script src="k-ok.js"></script>
     <script src="oK.js"></script>
+    <script src="convert.js"></script>
     <link rel="stylesheet" href="editor.css" />
   </head>
   <body>
@@ -200,8 +201,79 @@
         closeDialog();
       }
 
+      // Note read/write functions for oK
+      function readNote(x) {
+        if (!currentFileId) return k(3, []); // Return empty list if no file selected
+
+        const file = files.find((f) => f.id === currentFileId);
+        if (!file || !file.notes) return k(3, []); // Return empty list if no notes
+
+        const noteName = tojs(x);
+        const note = file.notes.find((n) => n.title === noteName);
+
+        if (!note) return k(3, []); // Return empty list if note not found
+        return parse(note.content);
+      }
+
+      function writeNote(x, y) {
+        if (!currentFileId) return y; // Return y if no file selected
+
+        const file = files.find((f) => f.id === currentFileId);
+        if (!file) return y; // Return y if file not found
+
+        if (!file.notes) file.notes = [];
+
+        const noteName = tojs(x);
+        if (noteName.length === 0) {
+          // Handle empty string case (print to output)
+          const s = tojs(y);
+          if (Array.isArray(s)) {
+            const result = s.join("\n") + "\n";
+            const resultDiv = document.createElement("div");
+            resultDiv.className = "ace-line-result";
+            resultDiv.textContent = result;
+            if (editor && editor.session.widgetManager) {
+              const cursorLine = editor.getCursorPosition().row;
+              editor.session.widgetManager.addLineWidget({
+                row: cursorLine,
+                el: resultDiv,
+                type: "lineWidget",
+                fixedWidth: true,
+              });
+            }
+          }
+        } else {
+          // Save/update note
+          const existingNote = file.notes.find((n) => n.title === noteName);
+          const content = format(y);
+
+          if (existingNote) {
+            existingNote.content = content;
+          } else {
+            file.notes.push({
+              id: Date.now(),
+              title: noteName,
+              content: content,
+            });
+          }
+
+          saveFiles();
+          renderCurrentFile();
+        }
+
+        return y;
+      }
+
       function executeCode(code, env) {
         try {
+          // Set up IO for note read/write
+          for (let i = 0; i < 2; i++) {
+            setIO("0:", i, readNote);
+          }
+          for (let i = 2; i < 6; i++) {
+            setIO("0:", i, writeNote);
+          }
+
           const lines = code.split("\n");
           const results = new Map();
           let result;
@@ -231,7 +303,7 @@
         if (!currentFileId || !editor) return;
 
         // Remove existing markers
-        currentMarkers.forEach(marker => {
+        currentMarkers.forEach((marker) => {
           editor.session.removeGutterDecoration(marker.row, marker.className);
           if (marker.widget) {
             editor.session.widgetManager.removeLineWidget(marker.widget);
@@ -256,7 +328,7 @@
           // Add gutter decoration
           const className = result.type === "error" ? "ace-line-error" : "";
           editor.session.addGutterDecoration(cursorLine, className);
-          
+
           // Initialize LineWidgets if not already done
           if (!editor.session.widgetManager) {
             const LineWidgets = ace.require("ace/line_widgets").LineWidgets;
@@ -276,7 +348,7 @@
           currentMarkers.push({
             row: cursorLine,
             className: className,
-            widget: widget
+            widget: widget,
           });
         }
       }
