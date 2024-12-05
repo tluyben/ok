@@ -202,7 +202,10 @@
         const noteName = tojs(x);
         const note = file.notes.find((n) => n.title === noteName);
         if (!note) return k(3, []);
-        return parse(note.content);
+        // Convert content to array by splitting on semicolons
+        // console.log(noteName, note.content);
+        const contentArray = note.content.split("\n");
+        return tok(contentArray);
       }
 
       function writeNote(x, y) {
@@ -231,7 +234,10 @@
           }
         } else {
           const existingNote = file.notes.find((n) => n.title === noteName);
-          const content = format(y);
+          // Convert array to string using semicolons
+          const content = Array.isArray(tojs(y))
+            ? tojs(y).join(";")
+            : format(y);
 
           if (existingNote) {
             existingNote.content = content;
