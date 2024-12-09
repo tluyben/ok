@@ -5,6 +5,7 @@ var os = require("os");
 var path = require("path");
 var readline = require("readline");
 var conv = require("./convert");
+global.conv = conv;
 help = `oK has atom, list (2;\`c), dict \`a\`b!(2;\`c) and func {[x;y]x+y}
 20 primitives/verbs, 6 operators/adverbs and 3 system functions
 

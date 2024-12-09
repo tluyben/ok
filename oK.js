@@ -2022,7 +2022,7 @@ function format(k, indent, symbol) {
 }
 
 // js natives and k natives:
-var natives = { log: 0, exp: 0, cos: 0, sin: 0, rx: 0 };
+var natives = { log: 0, exp: 0, cos: 0, sin: 0, rx: 0, ffi: 0 };
 var infix = { o: 0, in: 0 };
 function nmonad(n, f) {
   verbs[n] = [f, am(f), null, null, null, null, null, null];
@@ -2093,6 +2093,65 @@ function baseEnv() {
   }
 
   verbs["rx"] = [null, null, null, null, null, rx, null, null];
+
+  function ffi(x, y, env) {
+    var cmd = l(x)
+      .v.map((t) => String.fromCharCode(t.v))
+      .join("");
+
+    // console.log(global.conv.tojs(y));
+    y = global.conv.tojs(y);
+    if (!Array.isArray(y)) y = [y];
+
+    // one string;
+    // if (y.t === 3 && y.v.length > 0 && y.v[0].t === 1) y = { t: 3, v: [y] };
+    // y = y.v.map((i) => {
+    //   if (!i.v) return null;
+    //   var _i = i.t === 3 ? i.v : [i];
+    //   if (_i.every((t) => t.t == 1)) {
+    //     return _i.map((t) => String.fromCharCode(t.v)).join("");
+    //   } else {
+    //     return _i.v;
+    //   }
+    // });
+
+    // console.log("x", cmd, "y", JSON.stringify(y), "env", env);
+
+    cmd = `res = ${cmd}`;
+
+    var res = null;
+    var z;
+    if (y.length === 0) {
+      x = undefined;
+      y = undefined;
+      z = undefined;
+      eval(cmd);
+    } else if (y.length === 1) {
+      x = y[0];
+      y = undefined;
+      z = undefined;
+      eval(cmd);
+      //   console.log("helo", res);
+    } else if (y.length === 2) {
+      x = y[0];
+      y = y[1];
+      z = undefined;
+      eval(cmd);
+    } else if (y.length === 3) {
+      x = y[0];
+      z = y[2];
+      y = y[1];
+      eval(cmd);
+    }
+    // console.log(y, res);
+    // eval(cmd);
+
+    if (res) {
+      return global.conv.tok(res);
+    }
+  }
+
+  verbs["ffi"] = [null, null, null, null, null, ffi, null, null];
 
   run(parse("prm:{{$[x;,/x,''o'x^/:x;,x]}@$[-8>@x;!x;x]}"), env);
   run(parse("in:{~^y?x}"), env);

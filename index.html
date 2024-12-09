@@ -285,6 +285,11 @@ oK has atom, list (2;`c), dict `a`b!(2;`c) and func {[x;y]x+y}
           "\\: (eachleft) applies function between each item in left and right arg.",
       };
 
+      global.conv = {
+        tojs,
+        tok,
+      };
+
       function showExplanation(type, event) {
         const content = explanations[type];
         if (!content) return;
