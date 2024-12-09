@@ -15,6 +15,7 @@
     <script src="convert.js"></script>
     <link rel="stylesheet" href="editor.css" />
     <link rel="stylesheet" href="index.css" />
+    <link rel="stylesheet" href="newman.css" />
   </head>
   <body>
     <div class="sidebar" id="sidebar">
@@ -48,35 +49,17 @@
     <div class="manual-popover" id="manualPopover">
       <button class="manual-close" onclick="toggleManual()">×</button>
       <div class="manual-content">
-        <div class="manual-grid">
-          <div class="manual-section">
-            <pre>
-oK has atom, list (2;`c), dict `a`b!(2;`c) and func {[x;y]x+y}
-20 primitives/verbs, 6 operators/adverbs and 3 system functions
-
-<span class="clickable" data-type="verb">Verb</span>       (<span class="clickable" data-type="unary">unary</span>)    <span class="clickable" data-type="adverb">Adverb</span>             <span class="clickable" data-type="noun">Noun</span>         (<span class="clickable" data-type="null">null</span>)
-<span class="clickable" data-type="gets">:</span> gets                <span class="clickable" data-type="each">'</span>  each            name  `a`b    `
-<span class="clickable" data-type="plus">+</span> plus      flip      <span class="clickable" data-type="over">/</span>  over|join       char  "ab"    " "
-<span class="clickable" data-type="minus">-</span> minus     negate    <span class="clickable" data-type="scan">\</span>  scan|split      num   2 .3    0N(nan) 0w(inf)
-<span class="clickable" data-type="times">*</span> times     first     <span class="clickable" data-type="eachprior">': eachprior</span>       hex   0x2a2b
-<span class="clickable" data-type="divide">%</span> divide    sqrt      <span class="clickable" data-type="eachright">/: eachright</span>       bool  01000b
-<span class="clickable" data-type="mod">!</span> mod|map   enum|key  <span class="clickable" data-type="eachleft">\: eachleft</span>
-<span class="clickable" data-type="min">&</span> min|and   where
-<span class="clickable" data-type="max">|</span> max|or    reverse   System             list (2;3.4;`ab)
-<span class="clickable" data-type="less"><</span> less      asc       0: file r/w        dict `a`b!(2;`c)
-<span class="clickable" data-type="more">></span> more      desc      1: json r/w        view f::32+1.8*c
-<span class="clickable" data-type="equal">=</span> equal     group     5: printable form  func {[c]32+1.8*c}
-<span class="clickable" data-type="match">~</span> match     not
-<span class="clickable" data-type="concat">,</span> concat    enlist
-<span class="clickable" data-type="fill">^</span> fill|out  null                         \t x   time
-<span class="clickable" data-type="take">#</span> take|rsh  count                        \\     exit
-<span class="clickable" data-type="drop">_</span> drop|cut  floor
-<span class="clickable" data-type="cast">$</span> cast|sum  string    $[c;t;f]     COND
-<span class="clickable" data-type="find">?</span> find|rnd  distinct  ?[x;I;[f;]y] insert
-<span class="clickable" data-type="at">@</span> at        type      @[x;i;[f;]y] amend
-<span class="clickable" data-type="dot">.</span> dot       eval|val  .[x;i;[f;]y] dmend</pre>
+        <div class="nav-container">
+          <div class="categories">
+            <button class="category-btn active" data-category="monads">Monads</button>
+            <button class="category-btn" data-category="dyads">Dyads</button>
+            <button class="category-btn" data-category="adverbs">Adverbs</button>
+            <button class="category-btn" data-category="control">Control</button>
+            <button class="category-btn" data-category="types">Types</button>
+            <button class="category-btn" data-category="system">System</button>
           </div>
         </div>
+        <div id="content" class="cards-grid"></div>
       </div>
     </div>
 
@@ -86,11 +69,7 @@ oK has atom, list (2;`c), dict `a`b!(2;`c) and func {[x;y]x+y}
     </div>
 
     <div class="overlay" id="overlay"></div>
-    <div
-      class="overlay sidebar-overlay"
-      id="sidebarOverlay"
-      onclick="closeSidebar()"
-    ></div>
+    <div class="overlay sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
     <div class="edit-dialog" id="editDialog">
       <input type="text" id="fileNameInput" placeholder="File name" />
@@ -104,13 +83,12 @@ oK has atom, list (2;`c), dict `a`b!(2;`c) and func {[x;y]x+y}
       <input type="text" id="noteTitleInput" placeholder="Note title" />
       <textarea id="noteContentInput" placeholder="Note content"></textarea>
       <div class="dialog-actions">
-        <button class="new-file-btn" onclick="closeNotePopover()">
-          Cancel
-        </button>
+        <button class="new-file-btn" onclick="closeNotePopover()">Cancel</button>
         <button class="new-file-btn" onclick="saveNote()">Save</button>
       </div>
     </div>
 
+    <script src="newman.js"></script>
     <script src="index.js"></script>
   </body>
 </html>

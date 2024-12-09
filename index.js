@@ -1,94 +1,7 @@
-const explanations = {
-  verb: "K has 19 primitive verbs which are each represented as a single character. Each has different behavior when used as a monad (with one argument) or as a dyad (with two arguments).",
-  unary:
-    "A verb's unary form is used when there is no noun immediately to its left. For example, +l is flip, which takes the transpose of matrices.",
-  adverb:
-    "K has 6 primitive adverbs that take a verb as a left argument and apply it to right or right and left noun arguments in some special way.",
-  noun: "Nouns can be simple atomic types like numbers, characters or symbols or they can be compound datatypes like lists, dictionaries or functions.",
-  null: 'Null values in K are represented differently for different types: ` for symbols, " " for characters, 0N for numbers.',
-  gets: ": is the assignment operator, binding the result of a right-hand expression to a name.",
-  plus: "+ as a monad (flip) takes the transpose of matrices. As a dyad (plus) adds numbers together.",
-  minus:
-    "- as a monad (negate) flips the sign of numbers. As a dyad (minus) subtracts numbers.",
-  times:
-    "* as a monad (first) extracts the first element of a list. As a dyad (times) multiplies numbers.",
-  divide:
-    "% as a monad (sqrt) calculates square root. As a dyad (divide) divides numbers.",
-  mod: "! as a monad (int) generates a range. As a dyad (mod) calculates modulo or creates dictionaries.",
-  min: "& as a monad (where) makes copies of indices. As a dyad (min) finds minimum or logical AND.",
-  max: "| as a monad (reverse) reverses lists. As a dyad (max) finds maximum or logical OR.",
-  less: "< as a monad (asc) sorts ascending. As a dyad (less) compares if less than.",
-  more: "> as a monad (desc) sorts descending. As a dyad (more) compares if greater than.",
-  equal:
-    "= as a monad (group) groups items by value. As a dyad (equal) compares if equal.",
-  match:
-    "~ as a monad (not) logical NOT. As a dyad (match) compares if recursively identical.",
-  concat:
-    ", as a monad (enlist) creates single-item list. As a dyad (concat) joins lists/atoms.",
-  fill: "^ as a monad (null) checks if null. As a dyad (fill) replaces nulls or removes items.",
-  take: "# as a monad (count) counts items. As a dyad (take) takes/repeats items or reshapes.",
-  drop: "_ as a monad (floor) rounds down. As a dyad (drop) removes items or splits lists.",
-  cast: "$ as a monad (string) converts to string. As a dyad (cast) converts types or pads strings.",
-  find: "? as a monad (distinct) finds unique items. As a dyad (find) searches or generates random.",
-  at: "@ as a monad (type) gets type number. As a dyad (at) indexes or applies single argument.",
-  dot: ". as a monad (value) evaluates strings. As a dyad (dot) indexes deeply or applies arguments.",
-  each: "' (each) applies a function to each item in a list.",
-  over: "/ (over) reduces a list to single value by repeatedly applying a function.",
-  scan: "\\ (scan) like over but keeps intermediate results.",
-  eachprior:
-    "': (eachprior) applies function to each item and its predecessor.",
-  eachright:
-    "/: (eachright) applies function between left arg and each item in right.",
-  eachleft:
-    "\\: (eachleft) applies function between each item in left and right arg.",
-};
-
 (typeof window !== "undefined" ? window : global).conv = {
   tojs,
   tok,
 };
-
-function showExplanation(type, event) {
-  const content = explanations[type];
-  if (!content) return;
-
-  const popover = document.getElementById("explanationPopover");
-  const contentDiv = document.getElementById("explanationContent");
-
-  contentDiv.innerHTML = `${content}`;
-  popover.classList.add("active");
-
-  const rect = event.target.getBoundingClientRect();
-  const viewportHeight = window.innerHeight;
-  let top = rect.bottom + window.scrollY + 10;
-
-  // If popover would go off bottom of screen, show it above instead
-  if (top + 300 > viewportHeight) {
-    top = rect.top + window.scrollY - 310;
-  }
-
-  popover.style.top = top + "px";
-  // popover.style.left = rect.left + window.scrollX + "px";
-  popover.style.left = "10px";
-
-  event.stopPropagation();
-}
-
-function closeExplanation() {
-  document.getElementById("explanationPopover").classList.remove("active");
-}
-
-document.querySelectorAll(".clickable").forEach((el) => {
-  el.addEventListener("click", (e) => showExplanation(el.dataset.type, e));
-});
-
-// Close explanation popover when clicking outside
-document.addEventListener("click", (e) => {
-  const popover = document.getElementById("explanationPopover");
-  if (!popover.contains(e.target)) {
-    closeExplanation();
-  }
-});
 
 let files = [];
 let currentFileId = null;
@@ -104,9 +17,8 @@ function toggleManual() {
   const popover = document.getElementById("manualPopover");
   popover.classList.toggle("active");
   if (popover.classList.contains("active")) {
-    const rect = document.querySelector(".ok-title").getBoundingClientRect();
-    popover.style.top = rect.bottom + window.scrollY + 10 + "px";
-    popover.style.left = rect.left + window.scrollX + "px";
+    // Ensure initial content is rendered
+    renderContent("monads");
   }
 }
 
@@ -382,8 +294,6 @@ function initEditor() {
   editor.setOptions({
     fontSize: "14px",
     showPrintMargin: false,
-    // enableBasicAutocompletion: true,
-    // enableLiveAutocompletion: true,
     behavioursEnabled: false,
   });
 
@@ -617,11 +527,13 @@ loadTheme();
 loadFiles();
 renderFiles();
 
-// Close manual popover when clicking outside
-document.addEventListener("click", function (event) {
-  const popover = document.getElementById("manualPopover");
-  const okTitle = document.querySelector(".ok-title");
-  if (!popover.contains(event.target) && !okTitle.contains(event.target)) {
-    popover.classList.remove("active");
-  }
+// Initialize category buttons
+document.querySelectorAll(".category-btn").forEach((button) => {
+  button.addEventListener("click", (e) => {
+    document.querySelectorAll(".category-btn").forEach((btn) => 
+      btn.classList.remove("active")
+    );
+    e.target.classList.add("active");
+    renderContent(e.target.dataset.category);
+  });
 });
