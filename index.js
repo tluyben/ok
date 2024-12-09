@@ -355,16 +355,17 @@ function selectFile(id) {
   if (file && file.content) {
     lastContent = file.content;
     executeCode(file.content, environments.get(id));
-
-    setTimeout(() => {
-      if (editor) {
-        const lastLine = editor.session.getLength() - 1;
-        const lastCol = editor.session.getLine(lastLine).length;
-        editor.gotoLine(lastLine + 1, lastCol);
-        editor.focus();
-      }
-    }, 100);
   }
+}
+
+function findLastNonEmptyLine(content) {
+  const lines = content.split('\n');
+  for (let i = lines.length - 1; i >= 0; i--) {
+    if (lines[i].trim() !== '') {
+      return i;
+    }
+  }
+  return 0;
 }
 
 function renderCurrentFile() {
@@ -416,7 +417,14 @@ function renderCurrentFile() {
         `;
 
   initEditor();
-  editor.setValue(file.content, -1);
+  const content = file.content;
+  editor.setValue(content, -1);
+  
+  // Find the last non-empty line and move cursor there
+  const lastNonEmptyLine = findLastNonEmptyLine(content);
+  const lastLineContent = content.split('\n')[lastNonEmptyLine];
+  editor.gotoLine(lastNonEmptyLine + 1, lastLineContent.length, true);
+  editor.focus();
 }
 
 function renderFiles() {
