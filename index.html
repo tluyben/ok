@@ -36,7 +36,14 @@
       <div class="top-bar">
         <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
         <div class="mobile-header">
-          <h2 id="mobileTitle"></h2>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span
+              style="cursor: pointer; user-select: none"
+              onclick="toggleManual()"
+              >⌘</span
+            >
+            <h2 id="mobileTitle"></h2>
+          </div>
           <button class="icon-btn" onclick="openNotePopover()">➕</button>
           <div class="mobile-notes" id="mobileNotes"></div>
         </div>
@@ -51,10 +58,16 @@
       <div class="manual-content">
         <div class="nav-container">
           <div class="categories">
-            <button class="category-btn active" data-category="monads">Monads</button>
+            <button class="category-btn active" data-category="monads">
+              Monads
+            </button>
             <button class="category-btn" data-category="dyads">Dyads</button>
-            <button class="category-btn" data-category="adverbs">Adverbs</button>
-            <button class="category-btn" data-category="control">Control</button>
+            <button class="category-btn" data-category="adverbs">
+              Adverbs
+            </button>
+            <button class="category-btn" data-category="control">
+              Control
+            </button>
             <button class="category-btn" data-category="types">Types</button>
             <button class="category-btn" data-category="system">System</button>
           </div>
@@ -69,7 +82,11 @@
     </div>
 
     <div class="overlay" id="overlay"></div>
-    <div class="overlay sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    <div
+      class="overlay sidebar-overlay"
+      id="sidebarOverlay"
+      onclick="closeSidebar()"
+    ></div>
 
     <div class="edit-dialog" id="editDialog">
       <input type="text" id="fileNameInput" placeholder="File name" />
@@ -83,7 +100,9 @@
       <input type="text" id="noteTitleInput" placeholder="Note title" />
       <textarea id="noteContentInput" placeholder="Note content"></textarea>
       <div class="dialog-actions">
-        <button class="new-file-btn" onclick="closeNotePopover()">Cancel</button>
+        <button class="new-file-btn" onclick="closeNotePopover()">
+          Cancel
+        </button>
         <button class="new-file-btn" onclick="saveNote()">Save</button>
       </div>
     </div>
