@@ -176,6 +176,9 @@ The _Prettyprinter_ reverses the work of the Parser, turning a k-value back into
 ```
 ffi["console.log(x,y)";("hello";"world")]
 ffi["'hello '+x";("world")]
+
+ h:{ffi["'hello '+x";(x)]}
+ h "world"
 ```
 
 - regexp

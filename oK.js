@@ -2100,7 +2100,7 @@ function baseEnv() {
       .join("");
 
     // console.log(global.conv.tojs(y));
-    y = global.conv.tojs(y);
+    y = (typeof window !== "undefined" ? window : global).conv.tojs(y);
     if (!Array.isArray(y)) y = [y];
 
     // one string;
@@ -2147,7 +2147,7 @@ function baseEnv() {
     // eval(cmd);
 
     if (res) {
-      return global.conv.tok(res);
+      return (typeof window !== "undefined" ? window : global).conv.tok(res);
     }
   }
 
