@@ -2,21 +2,24 @@ class ChatInterface {
   constructor() {
     this.isOpen = false;
     this.isFullscreen = false;
+    this.chatButton = null;
+    this.chatContainer = null;
     this.initialize();
   }
 
   initialize() {
     // Create chat button
-    const chatButton = document.createElement('button');
-    chatButton.className = 'chat-button';
-    chatButton.innerHTML = '💬';
-    chatButton.onclick = () => this.toggleChat();
-    document.body.appendChild(chatButton);
+    this.chatButton = document.createElement('button');
+    this.chatButton.className = 'chat-button';
+    this.chatButton.innerHTML = '💬';
+    this.chatButton.onclick = () => this.toggleChat();
+    this.chatButton.style.display = 'none'; // Hide by default until we verify API key
+    document.body.appendChild(this.chatButton);
 
     // Create chat container
-    const chatContainer = document.createElement('div');
-    chatContainer.className = 'chat-container';
-    chatContainer.innerHTML = `
+    this.chatContainer = document.createElement('div');
+    this.chatContainer.className = 'chat-container';
+    this.chatContainer.innerHTML = `
       <div class="chat-header">
         <h3 class="chat-title">Chat Assistant</h3>
         <div class="chat-controls">
@@ -43,14 +46,14 @@ class ChatInterface {
         <button>Send</button>
       </div>
     `;
-    document.body.appendChild(chatContainer);
+    document.body.appendChild(this.chatContainer);
 
     // Add event listeners
-    chatContainer.querySelector('.close-chat').onclick = () => this.toggleChat();
-    chatContainer.querySelector('.fullscreen-toggle').onclick = () => this.toggleFullscreen();
+    this.chatContainer.querySelector('.close-chat').onclick = () => this.toggleChat();
+    this.chatContainer.querySelector('.fullscreen-toggle').onclick = () => this.toggleFullscreen();
     
-    const input = chatContainer.querySelector('input');
-    const sendButton = chatContainer.querySelector('.chat-input button');
+    const input = this.chatContainer.querySelector('input');
+    const sendButton = this.chatContainer.querySelector('.chat-input button');
     
     const sendMessage = () => {
       const message = input.value.trim();
@@ -67,7 +70,31 @@ class ChatInterface {
       }
     };
 
-    this.chatContainer = chatContainer;
+    // Check initial API key status
+    this.checkApiKey();
+
+    // Listen for settings changes
+    document.addEventListener('change', (e) => {
+      if (e.target.matches('input[name="api-provider"]') || 
+          e.target.matches('#anthropicKey, #openaiKey, #openrouterKey')) {
+        // Wait for settings to be saved
+        setTimeout(() => this.checkApiKey(), 0);
+      }
+    });
+  }
+
+  checkApiKey() {
+    const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+    const provider = settings.apiProvider || 'anthropic';
+    const key = settings[`${provider}Key`];
+    
+    // Show/hide chat button based on key validity
+    this.chatButton.style.display = key ? 'flex' : 'none';
+    
+    // If chat is open but key becomes invalid, close it
+    if (!key && this.isOpen) {
+      this.toggleChat();
+    }
   }
 
   toggleChat() {
