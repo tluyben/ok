@@ -12,12 +12,12 @@ let environments = new Map();
 let lineResults = new Map();
 let currentMarkers = [];
 let lastContent = "";
+let currentContextWidget = null;
 
 function toggleManual() {
   const popover = document.getElementById("manualPopover");
   popover.classList.toggle("active");
   if (popover.classList.contains("active")) {
-    // Ensure initial content is rendered
     renderContent("monads");
   }
 }
@@ -238,13 +238,13 @@ function executeCode(code, env, changedLine = -1) {
 function updateLineResults() {
   if (!currentFileId || !editor) return;
 
-  currentMarkers.forEach((marker) => {
-    editor.session.removeGutterDecoration(marker.row, marker.className);
-    if (marker.widget) {
-      editor.session.widgetManager.removeLineWidget(marker.widget);
-    }
-  });
-  currentMarkers = [];
+  // currentMarkers.forEach((marker) => {
+  //   editor.session.removeGutterDecoration(marker.row, marker.className);
+  //   if (marker.widget) {
+  //     editor.session.widgetManager.removeLineWidget(marker.widget);
+  //   }
+  // });
+  // currentMarkers = [];
 
   const results = lineResults.get(currentFileId);
   if (!results) return;
@@ -285,6 +285,152 @@ function updateLineResults() {
       widget: widget,
     });
   });
+}
+
+function moveCursorBack() {
+  if (!editor) return;
+  const pos = editor.getCursorPosition();
+  if (pos.column > 0) {
+    editor.moveCursorTo(pos.row, pos.column - 1);
+  }
+  editor.focus();
+}
+
+function moveCursorForward() {
+  if (!editor) return;
+  const pos = editor.getCursorPosition();
+  const line = editor.session.getLine(pos.row);
+  if (pos.column < line.length) {
+    editor.moveCursorTo(pos.row, pos.column + 1);
+  }
+  editor.focus();
+}
+
+function copyToNextLine() {
+  if (!editor) return;
+  const pos = editor.getCursorPosition();
+  const currentLine = editor.session.getLine(pos.row);
+  editor.session.insert({ row: pos.row + 1, column: 0 }, currentLine + "\n");
+  editor.moveCursorTo(pos.row + 1, currentLine.length);
+  editor.focus();
+}
+
+function copyToEnd() {
+  if (!editor) return;
+  const pos = editor.getCursorPosition();
+  const currentLine = editor.session.getLine(pos.row);
+  const lastLineIndex = editor.session.getLength();
+  editor.session.insert({ row: lastLineIndex, column: 0 }, currentLine + "\n");
+  editor.moveCursorTo(lastLineIndex, currentLine.length);
+  editor.focus();
+}
+
+function updateContextBar() {
+  if (!editor || window.innerWidth > 768) {
+    if (currentContextWidget) {
+      editor.session.widgetManager.removeLineWidget(currentContextWidget);
+      currentContextWidget = null;
+    }
+    return;
+  }
+
+  const cursorPos = editor.getCursorPosition();
+
+  // Remove previous widget if it exists
+  if (currentContextWidget) {
+    editor.session.widgetManager.removeLineWidget(currentContextWidget);
+    currentContextWidget = null;
+  }
+
+  // Create container for both result and context bar
+  const container = document.createElement("div");
+  container.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  `;
+
+  // Add result if exists
+  // const results = lineResults.get(currentFileId);
+  // if (results && results.has(cursorPos.row)) {
+  //   const result = results.get(cursorPos.row);
+  //   const resultDiv = document.createElement("div");
+  //   resultDiv.className = `ace-line-result ${
+  //     result.type === "error" ? "ace-line-error" : ""
+  //   }`;
+  //   resultDiv.textContent = ">>> " + result.value;
+  //   container.appendChild(resultDiv);
+  // }
+
+  // Create context bar element
+  const contextBar = document.createElement("div");
+  contextBar.className = "context-widget";
+  contextBar.style.cssText = `
+    display: flex;
+    gap: 8px;
+    padding: 4px;
+    background: var(--popover-bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-left: auto;
+    width: fit-content;
+    margin-bottom: 4px;
+    pointer-events: auto;
+    z-index: 1000;
+  `;
+
+  // Prevent clicks from reaching the editor
+  contextBar.addEventListener("mousedown", (e) => e.stopPropagation());
+  contextBar.addEventListener("click", (e) => e.stopPropagation());
+  contextBar.addEventListener("touchstart", (e) => e.stopPropagation());
+  contextBar.addEventListener("touchend", (e) => e.stopPropagation());
+
+  const buttons = [
+    { onclick: moveCursorBack, text: "⬅️" },
+    { onclick: moveCursorForward, text: "➡️" },
+    { onclick: copyToNextLine, text: "⬇️" },
+    { onclick: copyToEnd, text: "⤵️" },
+  ];
+
+  buttons.forEach((btn) => {
+    const button = document.createElement("button");
+    button.className = "context-btn";
+    button.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      btn.onclick();
+    };
+    button.textContent = btn.text;
+    button.style.cssText = `
+      padding: 4px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--card);
+      color: var(--foreground);
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+    `;
+    contextBar.appendChild(button);
+  });
+
+  container.appendChild(contextBar);
+
+  // Add widget to current line
+  if (editor.session.widgetManager) {
+    currentContextWidget = editor.session.widgetManager.addLineWidget({
+      row: cursorPos.row,
+      el: container,
+      type: "lineWidget",
+      fixedWidth: true,
+      coverGutter: true,
+      noHScroll: true,
+    });
+  }
 }
 
 function initEditor() {
@@ -338,8 +484,16 @@ function initEditor() {
   });
 
   editor.selection.on("changeCursor", function () {
+    // updateContextBar();
     updateLineResults();
+    updateContextBar();
   });
+
+  // Initial context bar update
+  updateContextBar();
+
+  // Add window resize listener for context bar
+  window.addEventListener("resize", updateContextBar);
 }
 
 function selectFile(id) {
@@ -412,13 +566,13 @@ function renderCurrentFile() {
     : "";
 
   document.getElementById("mainContent").innerHTML = `
-          <div class="title-bar">
-            <h2>${file.name}</h2>
-            <button class="icon-btn" onclick="openNotePopover()">➕</button>
-            <div class="notes-list">${notesList}</div>
-          </div>
-          <div id="editor"></div>
-        `;
+    <div class="title-bar">
+      <h2>${file.name}</h2>
+      <button class="icon-btn" onclick="openNotePopover()">➕</button>
+      <div class="notes-list">${notesList}</div>
+    </div>
+    <div id="editor"></div>
+  `;
 
   initEditor();
   const content = file.content;

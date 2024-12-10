@@ -28,6 +28,48 @@
   --popover-text: var(--popover-text-dark);
 }
 
+#editor {
+  position: relative;
+}
+
+.context-widget {
+  display: none;
+  position: absolute;
+  right: 10px;
+  background: var(--popover-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  gap: 8px;
+  transform: translateY(-200%);
+}
+
+.context-widget.active {
+  display: flex;
+}
+
+.context-btn {
+  background: var(--card);
+  border: none;
+  border-radius: var(--radius);
+  padding: 4px;
+  cursor: pointer;
+  color: var(--foreground);
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.context-btn:hover {
+  background: var(--card-hover);
+}
+
 .manual-popover {
   display: none;
   position: fixed;
@@ -212,5 +254,13 @@
   .example {
     font-size: 0.85rem;
     padding: 0.75rem;
+  }
+
+  .floating-context-bar {
+    display: none;
+  }
+
+  .floating-context-bar.active {
+    display: flex;
   }
 }
