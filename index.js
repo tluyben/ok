@@ -238,13 +238,13 @@ function executeCode(code, env, changedLine = -1) {
 function updateLineResults() {
   if (!currentFileId || !editor) return;
 
-  // currentMarkers.forEach((marker) => {
-  //   editor.session.removeGutterDecoration(marker.row, marker.className);
-  //   if (marker.widget) {
-  //     editor.session.widgetManager.removeLineWidget(marker.widget);
-  //   }
-  // });
-  // currentMarkers = [];
+  currentMarkers.forEach((marker) => {
+    editor.session.removeGutterDecoration(marker.row, marker.className);
+    if (marker.widget) {
+      editor.session.widgetManager.removeLineWidget(marker.widget);
+    }
+  });
+  currentMarkers = [];
 
   const results = lineResults.get(currentFileId);
   if (!results) return;
@@ -351,16 +351,16 @@ function updateContextBar() {
   `;
 
   // Add result if exists
-  // const results = lineResults.get(currentFileId);
-  // if (results && results.has(cursorPos.row)) {
-  //   const result = results.get(cursorPos.row);
-  //   const resultDiv = document.createElement("div");
-  //   resultDiv.className = `ace-line-result ${
-  //     result.type === "error" ? "ace-line-error" : ""
-  //   }`;
-  //   resultDiv.textContent = ">>> " + result.value;
-  //   container.appendChild(resultDiv);
-  // }
+  const results = lineResults.get(currentFileId);
+  if (results && results.has(cursorPos.row)) {
+    const result = results.get(cursorPos.row);
+    const resultDiv = document.createElement("div");
+    resultDiv.className = `ace-line-result ${
+      result.type === "error" ? "ace-line-error" : ""
+    }`;
+    resultDiv.textContent = ">>> " + result.value;
+    container.appendChild(resultDiv);
+  }
 
   // Create context bar element
   const contextBar = document.createElement("div");
