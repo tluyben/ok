@@ -23,10 +23,7 @@
         <h2 class="ok-title" onclick="toggleManual()">oK</h2>
         <div class="header-actions">
           <button class="new-file-btn" onclick="createNewFile()">📄 New</button>
-          <button class="theme-switch" id="themeSwitch" onclick="toggleTheme()">
-            <span class="theme-icon sun-icon">☀️</span>
-            <span class="theme-icon moon-icon">🌙</span>
-          </button>
+          <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
         </div>
       </div>
       <div class="files-list" id="filesList"></div>
@@ -50,6 +47,57 @@
       </div>
       <div class="main-content" id="mainContent">
         <div class="no-file-message">Select a file to view its contents</div>
+      </div>
+    </div>
+
+    <div class="settings-popover" id="settingsPopover">
+      <button class="manual-close" onclick="toggleSettings()">×</button>
+      <div class="settings-content">
+        <h3>Settings</h3>
+        
+        <div class="settings-section">
+          <h4>Theme</h4>
+          <button class="theme-switch" id="themeSwitch" onclick="toggleTheme()">
+            <span class="theme-icon sun-icon">☀️</span>
+            <span class="theme-icon moon-icon">🌙</span>
+          </button>
+        </div>
+
+        <div class="settings-section">
+          <h4>API Provider</h4>
+          <div class="radio-group">
+            <label>
+              <input type="radio" name="api-provider" value="anthropic" checked>
+              Anthropic
+            </label>
+            <label>
+              <input type="radio" name="api-provider" value="openai">
+              OpenAI
+            </label>
+            <label>
+              <input type="radio" name="api-provider" value="openrouter">
+              OpenRouter
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>API Keys</h4>
+          <div class="api-keys">
+            <div class="api-key-input">
+              <label>Anthropic API Key</label>
+              <input type="password" id="anthropicKey" placeholder="Enter Anthropic API key">
+            </div>
+            <div class="api-key-input">
+              <label>OpenAI API Key</label>
+              <input type="password" id="openaiKey" placeholder="Enter OpenAI API key">
+            </div>
+            <div class="api-key-input">
+              <label>OpenRouter API Key</label>
+              <input type="password" id="openrouterKey" placeholder="Enter OpenRouter API key">
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

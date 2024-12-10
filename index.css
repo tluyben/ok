@@ -11,6 +11,10 @@
   --border: #333333;
   --accent: #ffffff;
   --radius: 0.5rem;
+  --input-bg-light: #ffffff;
+  --input-bg-dark: #2d2d2d;
+  --input-border-light: #cccccc;
+  --input-border-dark: #555555;
 }
 
 [data-theme="light"] {
@@ -21,11 +25,215 @@
   --card: #f5f5f5;
   --card-hover: #e5e5e5;
   --border: #dddddd;
+  --input-bg: var(--input-bg-light);
+  --input-border: var(--input-border-light);
 }
 
 [data-theme="dark"] {
   --popover-bg: var(--popover-bg-dark);
   --popover-text: var(--popover-text-dark);
+  --input-bg: var(--input-bg-dark);
+  --input-border: var(--input-border-dark);
+}
+
+.settings-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 8px;
+  color: var(--foreground);
+  border-radius: var(--radius);
+  transition: background-color 0.2s;
+}
+
+.settings-btn:hover {
+  background: var(--card);
+}
+
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.overlay.active {
+  display: block;
+}
+
+.settings-popover {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--popover-bg);
+  color: var(--popover-text);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.settings-popover.active {
+  display: block;
+}
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-content h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.settings-section h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius);
+  transition: background-color 0.2s;
+  color: var(--foreground);
+}
+
+.radio-group label:hover {
+  background: var(--card-hover);
+}
+
+.api-keys {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.api-key-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.api-key-input label {
+  font-size: 0.9rem;
+  color: var(--foreground);
+}
+
+.api-key-input input {
+  padding: 8px 12px;
+  border: 2px solid var(--input-border);
+  border-radius: var(--radius);
+  background: var(--input-bg);
+  color: var(--foreground);
+  font-size: 0.9rem;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.api-key-input input:hover {
+  border-color: var(--muted);
+}
+
+.api-key-input input:focus {
+  outline: none;
+  border-color: var(--foreground);
+  box-shadow: 0 0 0 1px var(--foreground);
+}
+
+.theme-switch {
+  background: var(--input-bg);
+  border: 2px solid var(--input-border);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--foreground);
+  transition: all 0.2s ease;
+  font-size: 1.1rem;
+  width: auto;
+  min-width: 120px;
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-switch:hover {
+  border-color: var(--foreground);
+  background: var(--card-hover);
+}
+
+.theme-switch:active {
+  transform: translateY(1px);
+}
+
+.theme-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.sun-icon {
+  display: inline-block;
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.moon-icon {
+  display: inline-block;
+  transform: translateY(20px);
+  opacity: 0;
+  position: absolute;
+}
+
+.theme-switch.dark .sun-icon {
+  transform: translateY(-20px);
+  opacity: 0;
+}
+
+.theme-switch.dark .moon-icon {
+  transform: translateY(0);
+  opacity: 1;
+  display: inline;
 }
 
 .manual-popover {
@@ -186,6 +394,17 @@
 }
 
 @media (max-width: 768px) {
+  .settings-popover {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    transform: none;
+    top: 0;
+    left: 0;
+  }
+
   .manual-content {
     padding: 10px;
   }
