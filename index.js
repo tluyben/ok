@@ -250,17 +250,21 @@ function updateLineResults() {
   if (!results) return;
 
   const cursorLine = editor.getCursorPosition().row;
-  const result = results.get(cursorLine);
 
-  if (result) {
+  results.forEach((result, line) => {
     const resultDiv = document.createElement("div");
     resultDiv.className = `ace-line-result ${
       result.type === "error" ? "ace-line-error" : ""
     }`;
-    resultDiv.textContent = "> " + result.value;
+
+    let displayValue = result.value;
+    if (line !== cursorLine && displayValue.length > 100) {
+      displayValue = displayValue.substring(0, 100) + "...";
+    }
+    resultDiv.textContent = ">>> " + displayValue;
 
     const className = result.type === "error" ? "ace-line-error" : "";
-    editor.session.addGutterDecoration(cursorLine, className);
+    editor.session.addGutterDecoration(line, className);
 
     if (!editor.session.widgetManager) {
       const LineWidgets = ace.require("ace/line_widgets").LineWidgets;
@@ -269,18 +273,18 @@ function updateLineResults() {
     }
 
     const widget = editor.session.widgetManager.addLineWidget({
-      row: cursorLine,
+      row: line,
       el: resultDiv,
       type: "lineWidget",
       fixedWidth: true,
     });
 
     currentMarkers.push({
-      row: cursorLine,
+      row: line,
       className: className,
       widget: widget,
     });
-  }
+  });
 }
 
 function initEditor() {
@@ -359,9 +363,9 @@ function selectFile(id) {
 }
 
 function findLastNonEmptyLine(content) {
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   for (let i = lines.length - 1; i >= 0; i--) {
-    if (lines[i].trim() !== '') {
+    if (lines[i].trim() !== "") {
       return i;
     }
   }
@@ -419,10 +423,10 @@ function renderCurrentFile() {
   initEditor();
   const content = file.content;
   editor.setValue(content, -1);
-  
+
   // Find the last non-empty line and move cursor there
   const lastNonEmptyLine = findLastNonEmptyLine(content);
-  const lastLineContent = content.split('\n')[lastNonEmptyLine];
+  const lastLineContent = content.split("\n")[lastNonEmptyLine];
   editor.gotoLine(lastNonEmptyLine + 1, lastLineContent.length, true);
   editor.focus();
 }
@@ -538,9 +542,9 @@ renderFiles();
 // Initialize category buttons
 document.querySelectorAll(".category-btn").forEach((button) => {
   button.addEventListener("click", (e) => {
-    document.querySelectorAll(".category-btn").forEach((btn) => 
-      btn.classList.remove("active")
-    );
+    document
+      .querySelectorAll(".category-btn")
+      .forEach((btn) => btn.classList.remove("active"));
     e.target.classList.add("active");
     renderContent(e.target.dataset.category);
   });
