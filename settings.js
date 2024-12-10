@@ -71,3 +71,20 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("overlay").classList.remove("active");
   });
 });
+function toggleTheme() {
+  const html = document.documentElement;
+  const themeSwitch = document.getElementById("themeSwitch");
+  const currentTheme = html.getAttribute("data-theme");
+  const newTheme = currentTheme === "light" ? "dark" : "light";
+
+  html.setAttribute("data-theme", newTheme);
+  themeSwitch.classList.toggle("dark");
+
+  if (editor) {
+    editor.setTheme(
+      newTheme === "dark" ? "ace/theme/tomorrow_night" : "ace/theme/tomorrow"
+    );
+  }
+
+  saveSettings();
+}
